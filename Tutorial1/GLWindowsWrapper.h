@@ -8,6 +8,7 @@
 
 #include <windows.h>
 #include <gl\glew.h>		// The OpenGL Extension Wrangler Library
+#include <gl\wglew.h>		// Supports WGL extensions
 #include <gl\gl.h>
 #include <gl\glu.h>
 
@@ -53,6 +54,10 @@ const GLuint GL_MULTISAMPLE_TWO_AA = 2;
 const GLuint GL_MULTISAMPLE_FOUR_AA = 4;
 const GLuint GL_MULTISAMPLE_EIGHT_AA = 8;
 const GLuint GL_MUTLISAMPLE_SIXTEEN_AA = 16;
+
+// Defines what version of OpenGL Context we will be requesting
+const GLuint GL_MAJOR = 3;
+const GLuint GL_MINOR = 1;
 
 typedef class CGLWindowsCreation
 {
