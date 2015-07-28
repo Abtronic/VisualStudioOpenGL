@@ -5,11 +5,11 @@
 //#pragma comment(lib, "glew32.lib")
 
 #include <windows.h>
-#include <GL\glew.h>
-#include <gl\gl.h>
-#include <gl\glu.h>
-#include <gl\glext.h>
-#include <gl\wglext.h>
+//#include <GL\glew.h>
+//#include <gl\gl.h>
+//#include <gl\glu.h>
+//#include <gl\glext.h>
+//#include <gl\wglext.h>
 #include <stdio.h>
 #include <tchar.h>
 #include <iostream>

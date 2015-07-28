@@ -556,15 +556,20 @@ bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag)
 
 	if (!glewInitialised_)
 	{
-		if (InitMultisample(pfd))
+		//if (InitMultisample(pfd))
+		if (glewInit() == GLEW_OK)
 		{
 			//MessageBox(NULL, TEXT("Multisampling"), TEXT("Supported"), MB_OK);
 			KillGLWindow();		// Kill the Window
-			
+			glewInitialised_ = true;
 			return CreateGLWindow(title, fullscreenflag);
 		}
-		//else
-			//MessageBox(NULL, TEXT("returning false"), TEXT("InitMultisample()"), MB_OK);
+		else
+		{
+			MessageBox(NULL, TEXT("GLEW Initialisation Failed"), TEXT("glewInit"), MB_OK);
+			KillGLWindow();
+			return false;
+		}
 
 	}
 

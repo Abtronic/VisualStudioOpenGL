@@ -7,11 +7,12 @@
 #define _WINDOWS_WRAPPER_
 
 #include <windows.h>
+#include <gl\glew.h>		// The OpenGL Extension Wrangler Library
 #include <gl\gl.h>
 #include <gl\glu.h>
 
-#include <gl/wglext.h>		// WGL extensions
-#include <gl/glext.h>		// GL extensions
+#include <gl\wglext.h>		// WGL extensions
+#include <gl\glext.h>		// GL extensions
 
 #include <iostream>
 
@@ -78,6 +79,7 @@ public:
 	bool		glewInitialised_;	// Stores true or false for glew being initialised or not
 	GLuint		antiAliasLevel_;	// Stores the level of anti-aliasing required
 	int			arbMultisampleFormat_;	// Stores the multisample pixelformat
+	int			extendedGLFormat_;	// Stores the extended OpenGL pixelformat
 	RECT		TaskBarRect_;		// Stores the coordinates of the task bar
 	bool		showWindowFlag_;	// Used to stop the WM_MOVE message modifying the window position
 									// when ShowWindow is called
