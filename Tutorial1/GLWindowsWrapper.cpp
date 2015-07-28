@@ -495,7 +495,7 @@ bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag)
 	// if it is supported, then we're on our second pass. That means we want to use our 
 	// pixel format for sampling so set pixelFormat to arbMultisampleFormat instead
 	// This replaces the choosepixelformat if block below
-	if (!multisampleSupported_)
+	if (!glewInitialised_)
 	{
 		// if multisampling is not supported
 		PixelFormat_ = ChoosePixelFormat (hDC, &pfd);	// Find a compatible Pixel Format
@@ -554,7 +554,7 @@ bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag)
 	// this if statement is true the first time CreateGLWindow is called 
 	// the second time it is called within the second if statement it is false
 
-	if (!multisampleSupported_ && multisample_)
+	if (!glewInitialised_)
 	{
 		if (InitMultisample(pfd))
 		{

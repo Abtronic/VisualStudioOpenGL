@@ -75,6 +75,7 @@ public:
 	bool		fullscreen_;		// Stores true or false for fullscreen window or not
 	bool		multisample_;		// Stores true or false for multisampling required or not
 	bool		multisampleSupported_;	// Stores true or false for multisampling supported or not
+	bool		glewInitialised_;	// Stores true or false for glew being initialised or not
 	GLuint		antiAliasLevel_;	// Stores the level of anti-aliasing required
 	int			arbMultisampleFormat_;	// Stores the multisample pixelformat
 	RECT		TaskBarRect_;		// Stores the coordinates of the task bar
