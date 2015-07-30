@@ -155,6 +155,7 @@ CGLWindowsCreation::CGLWindowsCreation(void)
 	GetTaskBarRect();
 
 	InitialiseMultisampling();
+	InitialiseVersion();
 
 	int width = GetSystemMetrics(SM_CXSCREEN);	// Gets the screenwidth in pixels of the primary display monitor
 	int height = GetSystemMetrics(SM_CYSCREEN);	// Gets the screenheight in pixels of the primary display monitor
@@ -198,6 +199,7 @@ CGLWindowsCreation::CGLWindowsCreation(void)
 CGLWindowsCreation::CGLWindowsCreation(int winWidth, int winHeight, int xPos, int yPos)
 {
 	InitialiseMultisampling();
+	InitialiseVersion();
 	SetupWindows(winWidth, winHeight);
 
 	windowXPos_ = xPos;
@@ -208,6 +210,7 @@ CGLWindowsCreation::CGLWindowsCreation(int winWidth, int winHeight, int xPos, in
 CGLWindowsCreation::CGLWindowsCreation(int winWidth, int winHeight, int xPos, int yPos, int bits)
 {
 	InitialiseMultisampling();
+	InitialiseVersion();
 	SetupWindows(winWidth, winHeight);
 
 	windowXPos_ = xPos;
@@ -242,6 +245,7 @@ void CGLWindowsCreation::SetupWindows(int winWidth, int winHeight)
 	fullscreen_ = true;
 	active = true;
 	showWindowFlag_ = false;
+	glewInitialised_ = false;
 
 };
 
@@ -315,7 +319,7 @@ bool CGLWindowsCreation::GetTaskBarRect(void)
 }
 
 // if multisampling is specified by the user then 
-bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag, GLuint multisampling)
+bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag, MultisampleValue multisampling)
 {
 	multisample_ = true;
 
@@ -352,156 +356,154 @@ bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag, GLuin
 
 bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag)
 {
-
+	int width, height, xpos, ypos;
+	RECT winRect = WindowRect_;
 
 	//std::cout << "Window Creation First " << windowXPos_ << ", " << windowYPos_ << std::endl;
 
 //	std::cout << multisample_ << " " << multisampleSupported_ << " " << antiAliasLevel_ << " " << z << std::endl;
 //	z++;
-	if (!glewInitialised_)
+
+	fullscreen_ = fullscreenflag;		// set the fullscreen flag
+
+
+	if (fullscreen_)
 	{
-		int width, height, xpos, ypos;
-		RECT winRect = WindowRect_;
+		winRect.right = screenWidth_; winRect.bottom = screenHeight_;
+		winRect.top = winRect.left = 0;
+		xpos = ypos = 0;
+	}
+	else
+	{
+		xpos = windowXPos_; ypos = windowYPos_;
+	}
 
-		fullscreen_ = fullscreenflag;		// set the fullscreen flag
+	hInstance = GetModuleHandle(NULL);		// Grab an Instance for our  window
 
-		if (fullscreen_)
+	// Setting up our windows class
+	wc_.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC; // Redraw on move, and own DC for Windows
+	wc_.lpfnWndProc = (WNDPROC)WndProc;			// WndProc handles messages
+	wc_.cbClsExtra = 0;
+	wc_.cbWndExtra = 0;							// No extra Windows data
+	wc_.hInstance = hInstance;					// Set the Instance
+	wc_.hIcon = LoadIcon(NULL, IDI_WINLOGO);	// Load the default Icon
+	wc_.hCursor = LoadCursor(NULL, IDC_ARROW);	// Load the default Arrow
+	wc_.hbrBackground = NULL;							// No Background is required for OpenGL
+	wc_.lpszMenuName = NULL;							// We dont want a menu
+	wc_.lpszClassName = TEXT("OpenGL");				// Set the name of the window Class
+
+
+	if (!RegisterClass(&wc_))
+	{
+		MessageBox(NULL, TEXT("Failed to Register the Window Class"),
+			TEXT("ERROR"), MB_OK | MB_ICONEXCLAMATION);
+		return false;					// Exit and return false
+	}
+
+	if (fullscreen_)					// Are we in fullscreen mode?
+	{
+		DEVMODE dmScreenSettings;		// Device Mode
+		memset(&dmScreenSettings, 0, sizeof(dmScreenSettings));	// Make sure memory is cleared
+		dmScreenSettings.dmSize = sizeof(dmScreenSettings);	// Size of the Devmode structure
+		dmScreenSettings.dmPelsWidth = screenWidth_;			// Selected Screen Width
+		dmScreenSettings.dmPelsHeight = screenHeight_;			// Selected Screen Height
+		dmScreenSettings.dmBitsPerPel = screenBits_;			// Selected Bits per Pixel
+		dmScreenSettings.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
+
+		//MessageBoxPrintf(TEXT("Resolution Info"), TEXT("w:%d h:%d b:%d"), winRect.right - winRect.left, 
+		//	winRect.bottom - winRect.top, screenBits_);
+
+		// Try to set the Selected Mode and get results. NOTE: CDS_FULLSCREEN gets rid of the Start Bar
+		if (ChangeDisplaySettings(&dmScreenSettings, CDS_FULLSCREEN) != DISP_CHANGE_SUCCESSFUL)
 		{
-			winRect.right = screenWidth_; winRect.bottom = screenHeight_;
-			winRect.top = winRect.left = 0;
-			xpos = ypos = 0;
-		}
-		else
-		{
-			xpos = windowXPos_; ypos = windowYPos_;
-		}
-
-		hInstance = GetModuleHandle(NULL);		// Grab an Instance for our  window
-
-		// Setting up our windows class
-		wc_.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC; // Redraw on move, and own DC for Windows
-		wc_.lpfnWndProc = (WNDPROC)WndProc;			// WndProc handles messages
-		wc_.cbClsExtra = 0;
-		wc_.cbWndExtra = 0;							// No extra Windows data
-		wc_.hInstance = hInstance;					// Set the Instance
-		wc_.hIcon = LoadIcon(NULL, IDI_WINLOGO);	// Load the default Icon
-		wc_.hCursor = LoadCursor(NULL, IDC_ARROW);	// Load the default Arrow
-		wc_.hbrBackground = NULL;							// No Background is required for OpenGL
-		wc_.lpszMenuName = NULL;							// We dont want a menu
-		wc_.lpszClassName = TEXT("OpenGL");				// Set the name of the window Class
-
-
-		if (!RegisterClass(&wc_))
-		{
-			MessageBox(NULL, TEXT("Failed to Register the Window Class"),
-				TEXT("ERROR"), MB_OK | MB_ICONEXCLAMATION);
-			return false;					// Exit and return false
-		}
-
-		if (fullscreen_)					// Are we in fullscreen mode?
-		{
-			DEVMODE dmScreenSettings;		// Device Mode
-			memset(&dmScreenSettings, 0, sizeof(dmScreenSettings));	// Make sure memory is cleared
-			dmScreenSettings.dmSize = sizeof(dmScreenSettings);	// Size of the Devmode structure
-			dmScreenSettings.dmPelsWidth = screenWidth_;			// Selected Screen Width
-			dmScreenSettings.dmPelsHeight = screenHeight_;			// Selected Screen Height
-			dmScreenSettings.dmBitsPerPel = screenBits_;			// Selected Bits per Pixel
-			dmScreenSettings.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
-
-			//MessageBoxPrintf(TEXT("Resolution Info"), TEXT("w:%d h:%d b:%d"), winRect.right - winRect.left, 
-			//	winRect.bottom - winRect.top, screenBits_);
-
-			// Try to set the Selected Mode and get results. NOTE: CDS_FULLSCREEN gets rid of the Start Bar
-			if (ChangeDisplaySettings(&dmScreenSettings, CDS_FULLSCREEN) != DISP_CHANGE_SUCCESSFUL)
+			if (MessageBox(NULL, TEXT("The Requested Fullscreen Mode is not Supported by\nyour Video Card. Use Windowed Mode Instead?"),
+				TEXT("OpenGL Wrapper"), MB_YESNO | MB_ICONQUESTION) == IDYES)
 			{
-				if (MessageBox(NULL, TEXT("The Requested Fullscreen Mode is not Supported by\nyour Video Card. Use Windowed Mode Instead?"),
-					TEXT("OpenGL Wrapper"), MB_YESNO | MB_ICONQUESTION) == IDYES)
-				{
-					fullscreen_ = false;			// Switch to Windowed Mode
-				}
-				else
-				{
-					// Pop up a MessageBox letting the user know the Program is Closing
-					MessageBox(NULL, TEXT("Program will now Close."), TEXT("ERROR"), MB_OK | MB_ICONSTOP);
-					return false;			// exit the program and return false
-				}
+				fullscreen_ = false;			// Switch to Windowed Mode
+			}
+			else
+			{
+				// Pop up a MessageBox letting the user know the Program is Closing
+				MessageBox(NULL, TEXT("Program will now Close."), TEXT("ERROR"), MB_OK | MB_ICONSTOP);
+				return false;			// exit the program and return false
 			}
 		}
-		if (fullscreen_)	// Checking to see if we are still in Windowed Mode
-		{
-			dwExStyle_ = WS_EX_APPWINDOW;	// Window Extended Style
-			dwStyle_ = WS_POPUP;				// Windows Style
-			ShowCursor(false);				// Hides the Mouse Pointer
-		}
-		else
-		{
-			dwExStyle_ = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;	// Window Extended Style
-			dwStyle_ = WS_OVERLAPPEDWINDOW;					// Windows Style
-		}
-		//	std::cout << "Before adjust, winRect " << winRect.right << " " << winRect.left << " " << winRect.top << " " << winRect.bottom << std::endl;
-		AdjustWindowRectEx(&winRect, dwStyle_, false, dwExStyle_); // Adjust the window to the true requested size
-		//	std::cout << "After adjust, winRect " << winRect.right << " " << winRect.left << " " << winRect.top << " " << winRect.bottom << std::endl;
-		//	std::cout << "X and Y pos " << xpos << " " << ypos << std::endl;
+	}
+	if (fullscreen_)	// Checking to see if we are still in Windowed Mode
+	{
+		dwExStyle_ = WS_EX_APPWINDOW;	// Window Extended Style
+		dwStyle_ = WS_POPUP;				// Windows Style
+		ShowCursor(false);				// Hides the Mouse Pointer
+	}
+	else
+	{
+		dwExStyle_ = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;	// Window Extended Style
+		dwStyle_ = WS_OVERLAPPEDWINDOW;					// Windows Style
+	}
+	//	std::cout << "Before adjust, winRect " << winRect.right << " " << winRect.left << " " << winRect.top << " " << winRect.bottom << std::endl;
+	AdjustWindowRectEx(&winRect, dwStyle_, false, dwExStyle_); // Adjust the window to the true requested size
+	//	std::cout << "After adjust, winRect " << winRect.right << " " << winRect.left << " " << winRect.top << " " << winRect.bottom << std::endl;
+	//	std::cout << "X and Y pos " << xpos << " " << ypos << std::endl;
 
-		/*if (!fullscreen_)
-		{
-		MessageBoxPrintf(TEXT("Resolution Info"), TEXT("w:%d h:%d b:%d"), winRect.right - winRect.left,
-		winRect.bottom - winRect.top, screenBits_);
-		}*/
+	/*if (!fullscreen_)
+	{
+	MessageBoxPrintf(TEXT("Resolution Info"), TEXT("w:%d h:%d b:%d"), winRect.right - winRect.left,
+	winRect.bottom - winRect.top, screenBits_);
+	}*/
 
-		if (!(hWnd = CreateWindowEx(dwExStyle_,					// Extended style for the Window
-			TEXT("OpenGL"),				// Class Name
-			title,						// Title
-			WS_CLIPSIBLINGS |			// Required Window Style
-			WS_CLIPCHILDREN |			// Required Window Style
-			dwStyle_,					// Selected Window Style
-			xpos, ypos,					// Window Position
-			winRect.right - winRect.left, // Calculate adjusted Window Width
-			winRect.bottom - winRect.top, // Calculate adjusted Window Height
-			NULL,						// No Parent Window
-			NULL,						// No Menu
-			hInstance,					// Instance
-			NULL)))						// Don't pass anything to WM_CREATE
-		{
-			KillGLWindow();				// Kill the Window
-			MessageBox(NULL, TEXT("Window Creation Error"), TEXT("ERROR"),
-				MB_OK | MB_ICONEXCLAMATION);	// Inform the user of the error
-			return false;						// Quit the program
-		}
+	if (!(hWnd = CreateWindowEx(dwExStyle_,					// Extended style for the Window
+		TEXT("OpenGL"),				// Class Name
+		title,						// Title
+		WS_CLIPSIBLINGS |			// Required Window Style
+		WS_CLIPCHILDREN |			// Required Window Style
+		dwStyle_,					// Selected Window Style
+		xpos, ypos,					// Window Position
+		winRect.right - winRect.left, // Calculate adjusted Window Width
+		winRect.bottom - winRect.top, // Calculate adjusted Window Height
+		NULL,						// No Parent Window
+		NULL,						// No Menu
+		hInstance,					// Instance
+		NULL)))						// Don't pass anything to WM_CREATE
+	{
+		KillGLWindow();				// Kill the Window
+		MessageBox(NULL, TEXT("Window Creation Error"), TEXT("ERROR"),
+			MB_OK | MB_ICONEXCLAMATION);	// Inform the user of the error
+		return false;						// Quit the program
+	}
 
-		static PIXELFORMATDESCRIPTOR pfd =		// pfd tells Windows specific things about this window creation
-		{
-			sizeof(PIXELFORMATDESCRIPTOR),		// Size of this Pixel Format Descriptor
-			1,									// Version Number
-			PFD_DRAW_TO_WINDOW |				// Format must support Window
-			PFD_SUPPORT_OPENGL |				// Format must support OpenGL
-			PFD_DOUBLEBUFFER,					// Must support Double Buffering
-			PFD_TYPE_RGBA,						// Request an RGBA format
-			screenBits_,						// Colour Bit depth
-			0, 0, 0, 0, 0, 0,					// Color bits ignored
-			0,									// Shift bit ignored
-			0,									// No Accumulation bits ignored
-			16,									// 16 bit Z-Buffer (depth buffer)
-			0,									// No Stencil Buffer
-			PFD_MAIN_PLANE,						// Main Drawing Layer
-			0,									// Reserved
-			0, 0, 0								// Layer masks ignored
-		};
-		if (!(hDC = GetDC(hWnd)))				// If we didn't get a device context
-		{
-			KillGLWindow();						// Kill the window
-			MessageBox(NULL, TEXT("Can't Create a GL Device Context."),
-				TEXT("ERROR"), MB_OK | MB_ICONEXCLAMATION);	// Tell the user
-			return false;						// Exit Code
-		}
+	static PIXELFORMATDESCRIPTOR pfd =		// pfd tells Windows specific things about this window creation
+	{
+		sizeof(PIXELFORMATDESCRIPTOR),		// Size of this Pixel Format Descriptor
+		1,									// Version Number
+		PFD_DRAW_TO_WINDOW |				// Format must support Window
+		PFD_SUPPORT_OPENGL |				// Format must support OpenGL
+		PFD_DOUBLEBUFFER,					// Must support Double Buffering
+		PFD_TYPE_RGBA,						// Request an RGBA format
+		screenBits_,						// Colour Bit depth
+		0, 0, 0, 0, 0, 0,					// Color bits ignored
+		0,									// Shift bit ignored
+		0,									// No Accumulation bits ignored
+		16,									// 16 bit Z-Buffer (depth buffer)
+		0,									// No Stencil Buffer
+		PFD_MAIN_PLANE,						// Main Drawing Layer
+		0,									// Reserved
+		0, 0, 0								// Layer masks ignored
+	};
+	if (!(hDC = GetDC(hWnd)))				// If we didn't get a device context
+	{
+		KillGLWindow();						// Kill the window
+		MessageBox(NULL, TEXT("Can't Create a GL Device Context."),
+			TEXT("ERROR"), MB_OK | MB_ICONEXCLAMATION);	// Tell the user
+		return false;						// Exit Code
+	}
 
-		// Our first pass, Multisampling hasn't been created yet, so we create a window normally
-		// if it is supported, then we're on our second pass. That means we want to use our 
-		// pixel format for sampling so set pixelFormat to arbMultisampleFormat instead
-		// This replaces the choosepixelformat if block below
-		//if (!glewInitialised_)
-		///{
-		// if multisampling is not supported
+	// The next block should only be run if we don't have glew initialised or we 
+	// only need an OpenGL context that is less than or equal to 2.0 i.e. a fixed
+	// rendering pipeline
+	// If we need OpenGL > 2.0 then we need to create an OpenGl context initially in
+	// order to query if the OpenGL extension functions are available.
+	if (!glewInitialised_ || glMajor <=2)
+	{
 		PixelFormat_ = ChoosePixelFormat(hDC, &pfd);	// Find a compatible Pixel Format
 
 		if (PixelFormat_ == 0)		// Did we find a compatible format?
@@ -512,29 +514,75 @@ bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag)
 				TEXT("ERROR"), MB_OK | MB_ICONEXCLAMATION); // Tell the user
 			return false;
 		}
-
-		/*else
+	}
+	else	// else block should only run if we have queried successfully that OpenGL extensions are evailable
+	{
+		if (WGLEW_ARB_pixel_format)
 		{
-		PixelFormat_ = extendedGLFormat_;
-		}*/
-
-
-		/*	if (!(PixelFormat_ = ChoosePixelFormat(hDC, &pfd)))	// If Windows can't find a matching Pixel Format?
+			UINT numFormats;
+			int pixelFormat;
+			float fAttributes[] = { 0, 0 };	// Is used as a passing array to wglChoosePixelFormatARB 
+			// specifying several parameters but in float format
+			if (multisample_)
 			{
-			KillGLWindow();						// Kill the Window
-			MessageBox(NULL, TEXT("Can't find a matching PixelFormat."),
-			TEXT("ERROR"), MB_OK | MB_ICONEXCLAMATION); // Tell the user
-			return false;						// Exit Code
-			}		*/
-
-		if (!SetPixelFormat(hDC, PixelFormat_, &pfd))	// If Windows can't set the pixel format
-		{
-			KillGLWindow();						// Kill the Window
-			MessageBox(NULL, TEXT("Can't set the PixelFormat."),
-				TEXT("ERROR"), MB_OK | MB_ICONEXCLAMATION);	// Tell the user
-			return false;						// Exit Code
+				int pixelFormatAttribList[] =
+				{
+					WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
+					WGL_SUPPORT_OPENGL_ARB, GL_TRUE,
+					WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB,
+					WGL_DOUBLE_BUFFER_ARB, GL_TRUE,
+					WGL_PIXEL_TYPE_ARB, WGL_TYPE_RGBA_ARB,
+					WGL_COLOR_BITS_ARB, screenBits_,
+					WGL_ALPHA_BITS_ARB, 8,
+					WGL_DEPTH_BITS_ARB, 24,
+					WGL_STENCIL_BITS_ARB, 8,
+					WGL_SAMPLE_BUFFERS_ARB, GL_TRUE,
+					WGL_SAMPLES_ARB, antiAliasLevel_,
+					0, 0
+				};
+				if (!wglChoosePixelFormatARB(hDC, pixelFormatAttribList, fAttributes,
+					1, &pixelFormat, &numFormats));
+				{
+					KillGLWindow();						// Kill the Window
+					MessageBox(NULL, TEXT("Can't find a matching extended PixelFormat."),
+						TEXT("ERROR"), MB_OK | MB_ICONEXCLAMATION); // Tell the user
+					return false;						// Exit Code
+				}
+			}
 		}
+		else
+		{
+			MessageBox(NULL, TEXT("WGLEW_ARB_pixel_format unavailable"),
+				TEXT("glewInit"), MB_OK);
+			KillGLWindow();
+			return false;
+		}
+		PixelFormat_ = extendedGLFormat_;	// use our extended pixel format found in our query pass 
+	}
 
+
+	/*	if (!(PixelFormat_ = ChoosePixelFormat(hDC, &pfd)))	// If Windows can't find a matching Pixel Format?
+		{
+		KillGLWindow();						// Kill the Window
+		MessageBox(NULL, TEXT("Can't find a matching PixelFormat."),
+		TEXT("ERROR"), MB_OK | MB_ICONEXCLAMATION); // Tell the user
+		return false;						// Exit Code
+		}		*/
+
+	// Set the pixel format
+	if (!SetPixelFormat(hDC, PixelFormat_, &pfd))	
+	{
+		KillGLWindow();						// Kill the Window
+		MessageBox(NULL, TEXT("Can't set the PixelFormat."),
+			TEXT("ERROR"), MB_OK | MB_ICONEXCLAMATION);	// Tell the user
+		return false;						// Exit Code
+	}
+
+	// Same as with the pixel format if this is our first pass (i.e. glew is not initialised
+	// or we simply do not need the OpenGL extensions (i.e. need OpenGL version 2.0 or less)
+	// then we only need a normal Rendering Context
+	if (!glewInitialised_ || glMajor <=2)
+	{
 		if (!(hRC = wglCreateContext(hDC)))		// If Windows can't get a Rendering Context
 		{
 			KillGLWindow();						// Kill the Window
@@ -542,30 +590,29 @@ bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag)
 				TEXT("ERROR"), MB_OK | MB_ICONEXCLAMATION);	// Tell the user
 			return false;						// Exit Code
 		}
+	}
+	else // This block only runs if we have initialised glew AND we need a an OpenGL version higher than 2.0
+	{
+		hRC = ehRC;		// use our extended rendering context found in our query pass
+	}
 
-		if (!wglMakeCurrent(hDC, hRC))			// If the Rendering Context doesn't activate
-		{
-			KillGLWindow();						// Kill the Window
-			MessageBox(NULL, TEXT("Can't Activate the GL Rendering Context."),
-				TEXT("ERROR"), MB_OK | MB_ICONEXCLAMATION);	// Tell the user
-			return false;						// Exit Code
-		}
+	if (!wglMakeCurrent(hDC, hRC))			// If the Rendering Context doesn't activate
+	{
+		KillGLWindow();						// Kill the Window
+		MessageBox(NULL, TEXT("Can't Activate the GL Rendering Context."),
+			TEXT("ERROR"), MB_OK | MB_ICONEXCLAMATION);	// Tell the user
+		return false;						// Exit Code
 	}
 
 	// Now that the window is created, we want to query what samples are available
-	// We call our initMultiSample window
-	// if we return a valid context, we want to destroy our current window 
-	// and create a new one using the MultiSample Interface.
-	// this if statement is true the first time CreateGLWindow is called 
-	// the second time it is called within the second if statement it is false
-
-	if (!glewInitialised_)
+	// if we need an OpenGL context of a version higher than 2.0
+	if (!glewInitialised_ && glMajor > 2)
 	{
-		//if (InitMultisample(pfd))
 		if (glewInit() == GLEW_OK)
 		{
-			//MessageBox(NULL, TEXT("Multisampling"), TEXT("Supported"), MB_OK);
 			glewInitialised_ = true;
+			
+
 		}
 		else
 		{
@@ -575,13 +622,6 @@ bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag)
 		}
 
 	}
-
-	if (GL_MAJOR > 2)
-	{
-		KillGLWindow();
-
-	}
-
 
 
 	ShowWindow(hWnd, SW_SHOW);				// Show the Window

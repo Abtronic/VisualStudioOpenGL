@@ -55,13 +55,23 @@ const GLuint GL_MULTISAMPLE_FOUR_AA = 4;
 const GLuint GL_MULTISAMPLE_EIGHT_AA = 8;
 const GLuint GL_MUTLISAMPLE_SIXTEEN_AA = 16;
 
-// Defines what version of OpenGL Context we will be requesting
+typedef enum MultisampleValue
+{
+	GL_MULTISAMPLE_TWO = 2,
+	GL_MULTISAMPLE_FOUR = 4,
+	GL_MULTISAMPLE_EIGHT = 8,
+	GL_MULTISAMPLE_SIXTEEN = 16
+}MSV;
+
+// Defines what version of OpenGL Context we will be requesting. These are default values 
+// that are used when no version is specified.
 const GLuint GL_MAJOR = 3;
 const GLuint GL_MINOR = 1;
 
 typedef class CGLWindowsCreation
 {
 	HGLRC		hRC;				// Permanent Rendering Context
+	HGLRC		ehRC;				// extended Rendering Context
 	HDC			hDC;				// Private GDI Device Context
 	HWND		hWnd;				// Holds our Window Handle
 	HINSTANCE	hInstance;			// Holds the Instance of the Application
@@ -70,6 +80,8 @@ typedef class CGLWindowsCreation
 	WNDCLASS	wc_;				// Windows class structure
 	DWORD		dwExStyle_;			// Windows Extended style
 	DWORD		dwStyle_;			// Window Style
+	GLuint		glMajorVersion;		// The major version number of the OpenGL Context we want
+	GLuint		glMinorVersion;		// The minor version number of the OpenGL Context we want
 public:
 	RECT		WindowRect_;		// RECT that holds the windows width and height
 	int			windowXPos_;		// The x-position of the window on the desktop if running in windowed mode
@@ -88,6 +100,8 @@ public:
 	RECT		TaskBarRect_;		// Stores the coordinates of the task bar
 	bool		showWindowFlag_;	// Used to stop the WM_MOVE message modifying the window position
 									// when ShowWindow is called
+	GLuint		glMajor;			// Stores the major version number of OpenGL we need
+	GLuint		glMinor;			// Stores the minor version number of OpenGL we need
 
 
 
@@ -106,6 +120,9 @@ public:
 
 	// Initialises the multisampling variables for all the constructors
 	inline void InitialiseMultisampling() {multisample_ = false; multisampleSupported_ = false; antiAliasLevel_ = GL_MULTISAMPLE_FOUR_AA;}
+	
+	// Initialises the version number we need for all the constructors
+	inline void InitialiseVersion() { glMajor = GL_MAJOR; glMinor = GL_MINOR; }
 
 	// Function that finds all resolutions supported by the graphics card and picks the appropriate windowed mode
 	void WindowedResolution(int &winWidth, int &winHeight);
@@ -122,7 +139,7 @@ public:
 	bool CreateGLWindow(TCHAR *title, bool fullscreenflag);
 
 	// Overloaded Function to create a multisampled window; calls CreateGlWindow ultimately
-	bool CreateGLWindow(TCHAR *title, bool fullscreenflag, GLuint multisampling);
+	bool CreateGLWindow(TCHAR *title, bool fullscreenflag, MultisampleValue multisampling);
 
 	// Function to kill the window
 	void KillGLWindow(void);
