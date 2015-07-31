@@ -110,6 +110,7 @@ int InitGL(GLvoid)									// Initialisation of a new OpenGL Window
 		std::cout << "ARB_vertex_array_object is not supported" << std::endl;
 	}//*/
 
+	//std::cout << "Using OpenGL Version: " << (char *)glGetString(GL_VERSION) << std::endl;
 
 	glEnable(GL_TEXTURE_2D);			// Enables 2D texturing
 	glShadeModel(GL_SMOOTH);			// Enables smooth shading (gourad shading)
@@ -281,6 +282,8 @@ int WINAPI WinMain( HINSTANCE	hInstance,
 	{
 		fullscreen = true;
 	}
+
+	OpenGLWindow.SetOGLVersion(4, 6);
 
 	// Note that the window is created with 'fullscreen' specifications and 
 	// with a request for an anti-aliased (8 passes) graphical window

@@ -132,8 +132,9 @@ int CGLWindowsCreation::MessageLoop(void)
 					keys[VK_F3] = false;
 					RECT winRect;
 					GetWindowRect(hWnd, &winRect);
-					std::cout << "window rect " << winRect.left << " " << winRect.top << std::endl;
-					std::cout << "window Pos  " << windowXPos_ << " " << windowYPos_ << std::endl;
+					std::cout << "Window Dimensions " << winRect.right-winRect.left 
+						<< " " << winRect.bottom-winRect.top << std::endl;
+					std::cout << "Window Position  " << windowXPos_ << " " << windowYPos_ << std::endl;
 
 				}
 				if (keys[VK_F4])
@@ -222,6 +223,107 @@ CGLWindowsCreation::CGLWindowsCreation(int winWidth, int winHeight, int xPos, in
 	windowYPos_ = yPos;
 	screenBits_ = bits;
 }
+
+bool CGLWindowsCreation::SetOGLVersion(GLuint major, GLuint minor)
+{
+	std::string version("GL_VERSION_");
+	version = version + std::to_string(major) + "_" + std::to_string(minor);
+	//std::cout << version << std::endl;
+	if (glewIsSupported(version.c_str()))
+	{
+		glMajor = major;
+		glMinor = minor;
+		return true;
+	}
+	else
+	{
+//		std::cerr << "OpenGL Version " << major << "." << minor 
+//			<< " is not supported" << std::endl;
+	}
+	return false;
+}
+
+/*bool CGLWindowsCreation::SetOGLVersion(GLuint major, GLuint minor)
+{
+	bool valid = false;
+	switch (major)
+	{
+	case 1:
+		switch (minor)
+		{
+		case 1:
+			if (GL_VERSION_1_1) valid = true;
+			break;
+		case 2:
+			if (GL_VERSION_1_2) valid = true;
+			break;
+		case 3:
+			if (GL_VERSION_1_3) valid = true;
+			break;
+		case 4:
+			if (GL_VERSION_1_4) valid = true;
+			break;
+		case 5:
+			if (GL_VERSION_1_5) valid = true;
+			break;
+		}
+		break;
+	case 2:
+		switch (minor)
+		{
+		case 0:
+			if (GL_VERSION_2_0) valid = true;
+			break;
+		case 1:
+			if (GL_VERSION_2_1) valid = true;
+			break;
+		}
+	case 3:
+		switch (minor)
+		{
+		case 0:
+			if (GL_VERSION_3_0) valid = true;
+			break;
+		case 1:
+			if (GL_VERSION_3_1) valid = true;
+			break;
+		case 2:
+			if (GL_VERSION_3_2) valid = true;
+			break;
+		case 3:
+			if (GL_VERSION_3_3) valid = true;
+			break;
+		}
+	case 4:
+		switch (minor)
+		{
+		case 0:
+			if (GL_VERSION_4_0) valid = true;
+			break;
+		case 1:
+			if (GL_VERSION_4_1) valid = true;
+			break;
+		case 2:
+			if (GL_VERSION_4_2) valid = true;
+			break;
+		case 3:
+			if (GL_VERSION_4_3) valid = true;
+			break;
+		case 4:
+			if (GL_VERSION_4_4) valid = true;
+			break;
+		case 5:
+			if (GL_VERSION_4_5) valid = true;
+			break;
+		}
+	}
+	if (valid)
+	{
+		glMajor = major;
+		glMinor = minor;
+	}
+	return valid;
+} //*/
 
 
 void CGLWindowsCreation::SetupWindows(int winWidth, int winHeight)
@@ -323,6 +425,8 @@ bool CGLWindowsCreation::GetTaskBarRect(void)
 	return true;
 }
 
+
+
 // if multisampling is specified by the user then 
 bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag, MultiSampleValue::Enum multisampling)
 {
@@ -358,6 +462,8 @@ bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag, Multi
 
 	return CreateGLWindow(title, fullscreenflag);
 }
+
+
 
 bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag)
 {

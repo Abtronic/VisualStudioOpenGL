@@ -16,6 +16,7 @@
 #include <gl\glext.h>		// GL extensions
 
 #include <iostream>
+#include <string>
 
 //#include "arb_multisample.h"
 
@@ -115,8 +116,16 @@ public:
 //	bool fp;						// Boolean variable to show if F is being pressed
 //	bool bp;						// Boolean variable to show if B is being pressed
 	
+
 	// Constructor which takes no arguments
 	CGLWindowsCreation(void);
+	// Constructor where you can also specify the position of the window and width and height
+	CGLWindowsCreation(int winWidth, int winHeight, int windowXPos, int windowYPos);
+	// Constructor where you can also specify the bit depth of the window
+	CGLWindowsCreation(int winWidth, int winHeight, int windowXPos, int windowYPos, int bits);
+	
+	// function to set the version of OpenGL you wish to use
+	bool SetOGLVersion(GLuint major, GLuint minor);
 	// Setup file used by all constructors
 	void SetupWindows(int winWidth, int winHeight);
 
@@ -128,11 +137,6 @@ public:
 
 	// Function that finds all resolutions supported by the graphics card and picks the appropriate windowed mode
 	void WindowedResolution(int &winWidth, int &winHeight);
-
-	// Constructor where you can also specify the position of the window and width and height
-	CGLWindowsCreation(int winWidth, int winHeight, int windowXPos, int windowYPos);
-	// Constructor where you can also specify the bit depth of the window
-	CGLWindowsCreation(int winWidth, int winHeight, int windowXPos, int windowYPos, int bits);
 
 	// Gets the coordinates of the taskbar for use in calculating window position
 	bool GetTaskBarRect(void);
