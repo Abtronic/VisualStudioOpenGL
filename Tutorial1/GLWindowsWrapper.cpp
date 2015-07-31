@@ -36,6 +36,7 @@ int CGLWindowsCreation::WindowsMessages(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		}
 	case WM_KEYDOWN:						// If a key is being held down
 		{
+			std::cout << wParam << std::endl;
 			keys[wParam]= true;			// Mark the corresponding keys array entry as true
 			return 0;						// Jump back to message loop
 		}
@@ -109,9 +110,12 @@ int CGLWindowsCreation::MessageLoop(void)
 						light = !*/
 					KeyboardInput(); // function in the main file that handles any input from the keyboard
 				}
-				if (keys[VK_F1])			// If F1 is being pressed
+				if (keys[VK_RETURN] && keys[VK_MENU])			// If ALT + ENTER is being pressed
 				{
-					keys[VK_F1] = false;	// if so make key false so it can be pressed again
+					keys[VK_RETURN] = false;
+					//keys[VK_MENU] = false;
+					std::cout << "ALT + ENTER" << std::endl;
+					//keys[VK_RETURN] = false;	// if so make key false so it can be pressed again
 					KillGLWindow();			// Kill our current Window
 					fullscreen_ = !fullscreen_;	// Toggle the fullscreen/windowed mode
 					
@@ -122,6 +126,7 @@ int CGLWindowsCreation::MessageLoop(void)
 						return 0;			// if the Window is not created then quit the program
 					}
 				}
+
 				if (keys[VK_F3])
 				{
 					keys[VK_F3] = false;
@@ -624,21 +629,32 @@ bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag)
 	}
 	else // This block only runs if we have initialised glew AND we need a an OpenGL version higher than 2.0
 	{
-		int contextAttribs[] =
+		if (WGL_ARB_create_context_profile)
 		{
-			WGL_CONTEXT_MAJOR_VERSION_ARB, glMajor,
-			WGL_CONTEXT_MINOR_VERSION_ARB, glMinor,
-			WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
-			0	// End of attributes list
-		};
-		int mPixelFormat;
-		UINT numFormats;
-		if (!(hRC = wglCreateContextAttribsARB(hDC, 0, contextAttribs)))
+			int contextAttribs[] =
+			{
+				WGL_CONTEXT_MAJOR_VERSION_ARB, glMajor,
+				WGL_CONTEXT_MINOR_VERSION_ARB, glMinor,
+				WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB,
+				//			WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB, // This asks for a forward compatible context which will fully remove all depracated functions
+				0	// End of attributes list
+			};
+			int mPixelFormat;
+			UINT numFormats;
+			if (!(hRC = wglCreateContextAttribsARB(hDC, 0, contextAttribs)))
+			{
+				KillGLWindow();						// Kill the Window
+				MessageBox(NULL, TEXT("Can't create a GL Rendering Context."),
+					TEXT("ERROR"), MB_OK | MB_ICONEXCLAMATION);	// Tell the user
+				return false;						// Exit Code
+			}
+		}
+		else
 		{
-			KillGLWindow();						// Kill the Window
-			MessageBox(NULL, TEXT("Can't create a GL Rendering Context."),
-				TEXT("ERROR"), MB_OK | MB_ICONEXCLAMATION);	// Tell the user
-			return false;						// Exit Code
+			MessageBox(NULL, TEXT("WGLEW_ARB_create_context_profile unavailable"),
+				TEXT("glewInit"), MB_OK);
+			KillGLWindow();
+			return false;
 		}
 	}
 

@@ -246,6 +246,7 @@ LRESULT CALLBACK WndProc(	HWND hWnd,		// Handle for this Window
 void KeyboardInput(void)
 {
 
+
 }
 
 
@@ -280,13 +281,10 @@ int WINAPI WinMain( HINSTANCE	hInstance,
 	{
 		fullscreen = true;
 	}
-	else				// else we are using windowed mode
-	{
-		fullscreen = false;
-	}
+
 	// Note that the window is created with 'fullscreen' specifications and 
 	// with a request for an anti-aliased (8 passes) graphical window
-	if (!OpenGLWindow.CreateGLWindow(TEXT("C++ OpenGL Window Class"), fullscreen, 
+	if (!OpenGLWindow.CreateGLWindow(TEXT("C++ Extended OpenGL Window Class (using GLEW)"), fullscreen, 
 		MSV::GL_MULTISAMPLE_EIGHT))	// If we recieve an error code
 	{
 		return 0;			// Quit 
