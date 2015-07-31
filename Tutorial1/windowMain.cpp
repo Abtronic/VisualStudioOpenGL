@@ -100,7 +100,7 @@ GLvoid ReSizeGLScene(GLsizei width, GLsizei height)	// Function to resize and in
 
 int InitGL(GLvoid)									// Initialisation of a new OpenGL Window
 {
-	if (GLEW_OK != glewInit())			// Initialize the extension entry points.
+	/*if (GLEW_OK != glewInit())			// Initialize the extension entry points.
 	{
 		// GLEW failed
 		return false;
@@ -287,7 +287,7 @@ int WINAPI WinMain( HINSTANCE	hInstance,
 	// Note that the window is created with 'fullscreen' specifications and 
 	// with a request for an anti-aliased (8 passes) graphical window
 	if (!OpenGLWindow.CreateGLWindow(TEXT("C++ OpenGL Window Class"), fullscreen, 
-		MultisampleValue::GL_MULTISAMPLE_EIGHT))	// If we recieve an error code
+		MSV::GL_MULTISAMPLE_EIGHT))	// If we recieve an error code
 	{
 		return 0;			// Quit 
 	}

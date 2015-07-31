@@ -319,7 +319,7 @@ bool CGLWindowsCreation::GetTaskBarRect(void)
 }
 
 // if multisampling is specified by the user then 
-bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag, MultisampleValue multisampling)
+bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag, MultiSampleValue::Enum multisampling)
 {
 	multisample_ = true;
 
@@ -480,11 +480,11 @@ bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag)
 		PFD_DOUBLEBUFFER,					// Must support Double Buffering
 		PFD_TYPE_RGBA,						// Request an RGBA format
 		screenBits_,						// Colour Bit depth
-		0, 0, 0, 0, 0, 0,					// Color bits ignored
-		0,									// Shift bit ignored
-		0,									// No Accumulation bits ignored
-		16,									// 16 bit Z-Buffer (depth buffer)
-		0,									// No Stencil Buffer
+		0, 0, 0, 0, 0, 0, 0, 0,				// Colour and colour shift bits ignored
+		0, 0, 0, 0, 0,						// Accumulation bits ignored
+		24,									// No. of bits for Z-Buffer (depth buffer)
+		8,									// No. of bits for Stencil Buffer
+		0,									// Number of Aux buffers
 		PFD_MAIN_PLANE,						// Main Drawing Layer
 		0,									// Reserved
 		0, 0, 0								// Layer masks ignored
@@ -497,9 +497,9 @@ bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag)
 		return false;						// Exit Code
 	}
 
-	// The next block should only be run if we don't have glew initialised or we 
+	// The next block of code should only be run if we don't have glew initialised or we 
 	// only need an OpenGL context that is less than or equal to 2.0 i.e. a fixed
-	// rendering pipeline
+	// rendering pipeline.
 	// If we need OpenGL > 2.0 then we need to create an OpenGl context initially in
 	// order to query if the OpenGL extension functions are available.
 	if (!glewInitialised_ || glMajor <=2)
@@ -515,38 +515,70 @@ bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag)
 			return false;
 		}
 	}
-	else	// else block should only run if we have queried successfully that OpenGL extensions are evailable
+	else
+	// else block should only run if we have queried successfully that OpenGL extensions are evailable
+	// AND we also need an OpenGL context greater than 2.0
 	{
 		if (WGLEW_ARB_pixel_format)
 		{
 			UINT numFormats;
-			int pixelFormat;
+			int mPixelFormat;
 			float fAttributes[] = { 0, 0 };	// Is used as a passing array to wglChoosePixelFormatARB 
 			// specifying several parameters but in float format
-			if (multisample_)
+			if (multisample_)	// if we want multisampling
 			{
-				int pixelFormatAttribList[] =
+				int pixelFormatAttribList[] =	// A multisample pixel format attribute list
 				{
 					WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
 					WGL_SUPPORT_OPENGL_ARB, GL_TRUE,
-					WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB,
+//					WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB,
 					WGL_DOUBLE_BUFFER_ARB, GL_TRUE,
 					WGL_PIXEL_TYPE_ARB, WGL_TYPE_RGBA_ARB,
 					WGL_COLOR_BITS_ARB, screenBits_,
-					WGL_ALPHA_BITS_ARB, 8,
+//					WGL_ALPHA_BITS_ARB, 8,
 					WGL_DEPTH_BITS_ARB, 24,
 					WGL_STENCIL_BITS_ARB, 8,
-					WGL_SAMPLE_BUFFERS_ARB, GL_TRUE,
+					WGL_SAMPLE_BUFFERS_ARB, 1,
 					WGL_SAMPLES_ARB, antiAliasLevel_,
-					0, 0
+					0
 				};
 				if (!wglChoosePixelFormatARB(hDC, pixelFormatAttribList, fAttributes,
-					1, &pixelFormat, &numFormats));
+					1, &mPixelFormat, &numFormats))
+				{
+					KillGLWindow();						// Kill the Window
+					MessageBox(NULL, TEXT("Can't find a matching extended multisample PixelFormat."),
+						TEXT("ERROR"), MB_OK | MB_ICONEXCLAMATION); // Tell the user
+					return false;						// Exit Code
+				}
+				else
+				{
+					PixelFormat_ = mPixelFormat;
+				}
+			}
+			else // Otherwise we need an attribute list without mutlisampling
+			{
+				int pixelFormatAttribList[] =	// A pixel format attribute list without musltisampling
+				{
+					WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
+					WGL_SUPPORT_OPENGL_ARB, GL_TRUE,
+					WGL_DOUBLE_BUFFER_ARB, GL_TRUE,
+					WGL_PIXEL_TYPE_ARB, WGL_TYPE_RGBA_ARB,
+					WGL_COLOR_BITS_ARB, screenBits_,
+					WGL_DEPTH_BITS_ARB, 24,
+					WGL_STENCIL_BITS_ARB, 8,
+					0
+				};
+				if (!wglChoosePixelFormatARB(hDC, pixelFormatAttribList, fAttributes,
+					1, &mPixelFormat, &numFormats))
 				{
 					KillGLWindow();						// Kill the Window
 					MessageBox(NULL, TEXT("Can't find a matching extended PixelFormat."),
 						TEXT("ERROR"), MB_OK | MB_ICONEXCLAMATION); // Tell the user
 					return false;						// Exit Code
+				}
+				else
+				{
+					PixelFormat_ = mPixelFormat;
 				}
 			}
 		}
@@ -556,8 +588,7 @@ bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag)
 				TEXT("glewInit"), MB_OK);
 			KillGLWindow();
 			return false;
-		}
-		PixelFormat_ = extendedGLFormat_;	// use our extended pixel format found in our query pass 
+		} 
 	}
 
 
@@ -593,7 +624,22 @@ bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag)
 	}
 	else // This block only runs if we have initialised glew AND we need a an OpenGL version higher than 2.0
 	{
-		hRC = ehRC;		// use our extended rendering context found in our query pass
+		int contextAttribs[] =
+		{
+			WGL_CONTEXT_MAJOR_VERSION_ARB, glMajor,
+			WGL_CONTEXT_MINOR_VERSION_ARB, glMinor,
+			WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+			0	// End of attributes list
+		};
+		int mPixelFormat;
+		UINT numFormats;
+		if (!(hRC = wglCreateContextAttribsARB(hDC, 0, contextAttribs)))
+		{
+			KillGLWindow();						// Kill the Window
+			MessageBox(NULL, TEXT("Can't create a GL Rendering Context."),
+				TEXT("ERROR"), MB_OK | MB_ICONEXCLAMATION);	// Tell the user
+			return false;						// Exit Code
+		}
 	}
 
 	if (!wglMakeCurrent(hDC, hRC))			// If the Rendering Context doesn't activate
@@ -611,8 +657,8 @@ bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag)
 		if (glewInit() == GLEW_OK)
 		{
 			glewInitialised_ = true;
-			
-
+			KillGLWindow();
+			return CreateGLWindow(title, fullscreenflag);
 		}
 		else
 		{
@@ -620,7 +666,6 @@ bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag)
 			KillGLWindow();
 			return false;
 		}
-
 	}
 
 

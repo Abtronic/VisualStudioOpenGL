@@ -55,12 +55,14 @@ const GLuint GL_MULTISAMPLE_FOUR_AA = 4;
 const GLuint GL_MULTISAMPLE_EIGHT_AA = 8;
 const GLuint GL_MUTLISAMPLE_SIXTEEN_AA = 16;
 
-typedef enum MultisampleValue
-{
-	GL_MULTISAMPLE_TWO = 2,
-	GL_MULTISAMPLE_FOUR = 4,
-	GL_MULTISAMPLE_EIGHT = 8,
-	GL_MULTISAMPLE_SIXTEEN = 16
+typedef struct MultiSampleValue{
+	typedef enum Enum
+	{
+		GL_MULTISAMPLE_TWO = 2,
+		GL_MULTISAMPLE_FOUR = 4,
+		GL_MULTISAMPLE_EIGHT = 8,
+		GL_MULTISAMPLE_SIXTEEN = 16
+	};
 }MSV;
 
 // Defines what version of OpenGL Context we will be requesting. These are default values 
@@ -139,7 +141,7 @@ public:
 	bool CreateGLWindow(TCHAR *title, bool fullscreenflag);
 
 	// Overloaded Function to create a multisampled window; calls CreateGlWindow ultimately
-	bool CreateGLWindow(TCHAR *title, bool fullscreenflag, MultisampleValue multisampling);
+	bool CreateGLWindow(TCHAR *title, bool fullscreenflag, MultiSampleValue::Enum multisampling);
 
 	// Function to kill the window
 	void KillGLWindow(void);
