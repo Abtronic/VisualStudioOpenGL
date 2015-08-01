@@ -4,6 +4,8 @@
 
 int CGLWindowsCreation::WindowsMessages(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+	std::cout << uMsg << std::endl;
+
 	switch(uMsg)			// Check for Windows messages
 	{
 	case WM_ACTIVATE:		// Watch for the Window Activate message
@@ -16,8 +18,22 @@ int CGLWindowsCreation::WindowsMessages(UINT uMsg, WPARAM wParam, LPARAM lParam)
 			{
 				active = false;				// Program is no longer active
 			}
+			if (!LOWORD(wParam))
+			{
+				if (fullscreen_)
+				{
+					ShowWindow(hWnd, SW_MINIMIZE);
+					active = false;
+				}
+			}
 
 			return 0;						// Return to the message loop
+		}
+	case WM_KILLFOCUS:
+		{
+			//ShowWindow(hWnd, SW_SHOWMINNOACTIVE);
+			active = false;
+			return 0;
 		}
 	case WM_SYSCOMMAND:						// Intercept System Commands
 		{
@@ -28,6 +44,7 @@ int CGLWindowsCreation::WindowsMessages(UINT uMsg, WPARAM wParam, LPARAM lParam)
 				return 0;					// Prevent from happening by returning zero
 			}
 			break;							// Exit switch statement
+
 		}
 	case WM_CLOSE:							// If we recieve a close message
 		{
@@ -37,14 +54,33 @@ int CGLWindowsCreation::WindowsMessages(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	case WM_KEYDOWN:						// If a key is being held down
 		{
 			std::cout << wParam << std::endl;
-			keys[wParam]= true;			// Mark the corresponding keys array entry as true
+			keys[wParam] = true;			// Mark the corresponding keys array entry as true
 			return 0;						// Jump back to message loop
+		}
+		
+	case WM_SYSKEYDOWN:
+		{
+			if (lParam & (1 << 29))
+			{
+				if (wParam == VK_RETURN)
+				{
+					KillGLWindow();
+					fullscreen_ = !fullscreen_;
+					if (!CreateGLWindow(TEXT("C++ OpenGL Window Class"), fullscreen_))
+					{
+						return 0;			// if the Window is not created then quit the program
+					}
+				}
+				
+			}
+			return 0;
 		}
 	case WM_KEYUP:							// If a key is released
 		{
 			keys[wParam] = false;			// Mark the corresponding keys array entry as false
 			return 0;						// Jump back to the message loop
 		}
+
 	case WM_SIZE:							// The window has been resized
 		{
 			ReSizeGLScene(LOWORD(lParam), HIWORD(lParam));	// LOWORD = width, HIWORD = height
@@ -110,7 +146,7 @@ int CGLWindowsCreation::MessageLoop(void)
 						light = !*/
 					KeyboardInput(); // function in the main file that handles any input from the keyboard
 				}
-				if (keys[VK_RETURN] && keys[VK_MENU])			// If ALT + ENTER is being pressed
+				/*if (keys[VK_RETURN] && keys[VK_MENU])			// If ALT + ENTER is being pressed
 				{
 					keys[VK_RETURN] = false;
 					//keys[VK_MENU] = false;
@@ -125,7 +161,7 @@ int CGLWindowsCreation::MessageLoop(void)
 					{
 						return 0;			// if the Window is not created then quit the program
 					}
-				}
+				}*/
 
 				if (keys[VK_F3])
 				{
@@ -224,11 +260,12 @@ CGLWindowsCreation::CGLWindowsCreation(int winWidth, int winHeight, int xPos, in
 	screenBits_ = bits;
 }
 
-bool CGLWindowsCreation::SetOGLVersion(GLuint major, GLuint minor)
+/*bool CGLWindowsCreation::SetOGLVersion(GLuint major, GLuint minor)
 {
 	std::string version("GL_VERSION_");
-	version = version + std::to_string(major) + "_" + std::to_string(minor);
-	//std::cout << version << std::endl;
+	version = version + std::to_string(major) + "_" + std::to_string(minor)
+		+ " GL_ARB_point_sprite";
+	std::cout << version.c_str() << std::endl;
 	if (glewIsSupported(version.c_str()))
 	{
 		glMajor = major;
@@ -237,13 +274,13 @@ bool CGLWindowsCreation::SetOGLVersion(GLuint major, GLuint minor)
 	}
 	else
 	{
-//		std::cerr << "OpenGL Version " << major << "." << minor 
-//			<< " is not supported" << std::endl;
+		std::cerr << "OpenGL Version " << major << "." << minor 
+			<< " is not supported" << std::endl;
 	}
 	return false;
-}
+}*/
 
-/*bool CGLWindowsCreation::SetOGLVersion(GLuint major, GLuint minor)
+bool CGLWindowsCreation::SetOGLVersion(GLuint major, GLuint minor)
 {
 	bool valid = false;
 	switch (major)
@@ -539,12 +576,13 @@ bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag)
 				return false;			// exit the program and return false
 			}
 		}
-	}
+	} 
+
 	if (fullscreen_)	// Checking to see if we are still in Windowed Mode
 	{
 		dwExStyle_ = WS_EX_APPWINDOW;	// Window Extended Style
 		dwStyle_ = WS_POPUP;				// Windows Style
-		ShowCursor(false);				// Hides the Mouse Pointer
+		//ShowCursor(false);				// Hides the Mouse Pointer
 	}
 	else
 	{

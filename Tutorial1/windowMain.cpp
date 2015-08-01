@@ -23,7 +23,7 @@
 #define PROJECTION		// If PROJECTION is defined then we have perspective projection else orthographic
 #define DEBUG			// If DEBUG is defined a debug console window will also be created.
 // Global Variables
-CGLWindows	OpenGLWindow;		// Initialising a CGLWindows class
+CGLWindows	OpenGLWindow;// (600, 400, 100, 100);		// Initialising a CGLWindows class
 //CBitmap *bitmap;
 GLuint texture;
 //bool matrixFlag = 0;
@@ -110,7 +110,7 @@ int InitGL(GLvoid)									// Initialisation of a new OpenGL Window
 		std::cout << "ARB_vertex_array_object is not supported" << std::endl;
 	}//*/
 
-	//std::cout << "Using OpenGL Version: " << (char *)glGetString(GL_VERSION) << std::endl;
+	std::cout << "Using OpenGL Version: " << (char *)glGetString(GL_VERSION) << std::endl;
 
 	glEnable(GL_TEXTURE_2D);			// Enables 2D texturing
 	glShadeModel(GL_SMOOTH);			// Enables smooth shading (gourad shading)
@@ -283,7 +283,7 @@ int WINAPI WinMain( HINSTANCE	hInstance,
 		fullscreen = true;
 	}
 
-	OpenGLWindow.SetOGLVersion(4, 6);
+	OpenGLWindow.SetOGLVersion(4, 2);
 
 	// Note that the window is created with 'fullscreen' specifications and 
 	// with a request for an anti-aliased (8 passes) graphical window
