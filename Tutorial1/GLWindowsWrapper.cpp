@@ -4,8 +4,6 @@
 
 int CGLWindowsCreation::WindowsMessages(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	std::cout << uMsg << std::endl;
-
 	switch(uMsg)			// Check for Windows messages
 	{
 	case WM_ACTIVATE:		// Watch for the Window Activate message
