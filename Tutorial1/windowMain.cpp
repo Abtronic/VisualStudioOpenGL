@@ -283,7 +283,7 @@ int WINAPI WinMain( HINSTANCE	hInstance,
 		fullscreen = true;
 	}
 
-	OpenGLWindow.SetOGLVersion(4, 2);
+	OpenGLWindow.SetGLVersion(4, 2);
 
 	// Note that the window is created with 'fullscreen' specifications and 
 	// with a request for an anti-aliased (8 passes) graphical window

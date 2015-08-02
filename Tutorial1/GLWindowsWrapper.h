@@ -71,6 +71,9 @@ typedef struct MultiSampleValue{
 const GLuint GL_MAJOR = 3;
 const GLuint GL_MINOR = 1;
 
+//#define DEBUG
+
+
 typedef class CGLWindowsCreation
 {
 	HGLRC		hRC;				// Permanent Rendering Context
@@ -125,7 +128,7 @@ public:
 	CGLWindowsCreation(int winWidth, int winHeight, int windowXPos, int windowYPos, int bits);
 	
 	// function to set the version of OpenGL you wish to use
-	bool SetOGLVersion(GLuint major, GLuint minor);
+	bool SetGLVersion(GLuint major, GLuint minor);
 	// Setup file used by all constructors
 	void SetupWindows(int winWidth, int winHeight);
 

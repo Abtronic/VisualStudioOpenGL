@@ -258,7 +258,7 @@ CGLWindowsCreation::CGLWindowsCreation(int winWidth, int winHeight, int xPos, in
 	screenBits_ = bits;
 }
 
-/*bool CGLWindowsCreation::SetOGLVersion(GLuint major, GLuint minor)
+/*bool CGLWindowsCreation::SetGLVersion(GLuint major, GLuint minor)
 {
 	std::string version("GL_VERSION_");
 	version = version + std::to_string(major) + "_" + std::to_string(minor)
@@ -278,7 +278,7 @@ CGLWindowsCreation::CGLWindowsCreation(int winWidth, int winHeight, int xPos, in
 	return false;
 }*/
 
-bool CGLWindowsCreation::SetOGLVersion(GLuint major, GLuint minor)
+bool CGLWindowsCreation::SetGLVersion(GLuint major, GLuint minor)
 {
 	bool valid = false;
 	switch (major)
@@ -397,6 +397,7 @@ void CGLWindowsCreation::SetupWindows(int winWidth, int winHeight)
 // fullscreen is not selected. 
 void CGLWindowsCreation::WindowedResolution(int &winWidth, int &winHeight)
 {
+	std::cout << "Windowed Resolution" << std::endl;
 	bool match = false;
 	DEVMODE dm = {0};
 	dm.dmSize = sizeof(dm);
@@ -417,7 +418,10 @@ void CGLWindowsCreation::WindowedResolution(int &winWidth, int &winHeight)
 		//int iModeNum = 0;
 		//EnumDisplaySettings(NULL, iModeNum, &dm);
 		//MessageBoxPrintf(TEXT("Screen Resolutions"), TEXT("Mode %d = %dx%d, color depth = %d"), iModeNum, dm.dmPelsWidth, dm.dmPelsHeight, dm.dmBitsPerPel);
+//#ifdef DEBUG
+		std::cout << "Mode " << iModeNum << "= " << dm.dmPelsWidth << "x" << dm.dmPelsHeight << " @ " << dm.dmBitsPerPel << "bpp" << std::endl;
 
+//#endif
 		// if the bpp and height equal the screen resolution
 		if (bits == dm.dmBitsPerPel && height == dm.dmPelsHeight)
 		{
@@ -429,7 +433,7 @@ void CGLWindowsCreation::WindowedResolution(int &winWidth, int &winHeight)
 		}
 		else
 		{
-			// otherwise save our information as the previous graphcis mode info.
+			// otherwise save our information as the previous graphics mode info.
 			prevBits = dm.dmBitsPerPel; prevWidth = dm.dmPelsWidth; prevHeight = dm.dmPelsHeight;
 		}
 	}
