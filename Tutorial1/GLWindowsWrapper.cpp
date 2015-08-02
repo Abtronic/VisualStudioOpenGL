@@ -166,7 +166,7 @@ int CGLWindowsCreation::MessageLoop(void)
 					keys[VK_F3] = false;
 					RECT winRect;
 					GetWindowRect(hWnd, &winRect);
-					std::cout << "Window Dimensions " << winRect.right-winRect.left 
+					std::cerr << "Window Dimensions " << winRect.right-winRect.left 
 						<< " " << winRect.bottom-winRect.top << std::endl;
 					std::cout << "Window Position  " << windowXPos_ << " " << windowYPos_ << std::endl;
 
@@ -230,7 +230,7 @@ CGLWindowsCreation::CGLWindowsCreation(void)
 
 
 	WindowedResolution(winWidth, winHeight);
-
+	findDisplayModes();
 	SetupWindows(winWidth, winHeight);
 }
 
@@ -277,6 +277,23 @@ CGLWindowsCreation::CGLWindowsCreation(int winWidth, int winHeight, int xPos, in
 	}
 	return false;
 }*/
+
+// Cycles through all the modes that the graphics card can display and stores them.
+void CGLWindowsCreation::findDisplayModes()
+{
+	DEVMODE dm;
+	CScreenMode previous;
+
+	for (int iModeNum = 0; EnumDisplaySettings(NULL, iModeNum, &dm) != 0; iModeNum++)
+	{
+		CScreenMode current(dm.dmBitsPerPel, dm.dmPelsWidth, dm.dmPelsHeight);
+		if (!(current == previous))
+		{ 
+			displayModes.push_back(current);
+
+		}
+	}
+}
 
 bool CGLWindowsCreation::SetGLVersion(GLuint major, GLuint minor)
 {
@@ -397,7 +414,6 @@ void CGLWindowsCreation::SetupWindows(int winWidth, int winHeight)
 // fullscreen is not selected. 
 void CGLWindowsCreation::WindowedResolution(int &winWidth, int &winHeight)
 {
-	std::cout << "Windowed Resolution" << std::endl;
 	bool match = false;
 	DEVMODE dm = {0};
 	dm.dmSize = sizeof(dm);
@@ -418,10 +434,9 @@ void CGLWindowsCreation::WindowedResolution(int &winWidth, int &winHeight)
 		//int iModeNum = 0;
 		//EnumDisplaySettings(NULL, iModeNum, &dm);
 		//MessageBoxPrintf(TEXT("Screen Resolutions"), TEXT("Mode %d = %dx%d, color depth = %d"), iModeNum, dm.dmPelsWidth, dm.dmPelsHeight, dm.dmBitsPerPel);
-//#ifdef DEBUG
-		std::cout << "Mode " << iModeNum << "= " << dm.dmPelsWidth << "x" << dm.dmPelsHeight << " @ " << dm.dmBitsPerPel << "bpp" << std::endl;
 
-//#endif
+		//std::cerr << "Mode " << iModeNum << "= " << dm.dmPelsWidth << "x" << dm.dmPelsHeight << " @ " << dm.dmBitsPerPel << "bpp" << std::endl;
+
 		// if the bpp and height equal the screen resolution
 		if (bits == dm.dmBitsPerPel && height == dm.dmPelsHeight)
 		{

@@ -17,8 +17,7 @@
 
 #include <iostream>
 #include <string>
-
-//#include "arb_multisample.h"
+#include <vector>
 
 // Function declarations so that the class members can use the functions 
 // defined in windowMain.cpp
@@ -49,12 +48,12 @@ void KeyboardInput(void);
 #define GL_MULTISAMPLE_EIGHT_AA 8
 #define GL_MUTLISAMPLE_SIXTEEN_AA 16*/
 
-// Better to use const global variables rather than #defines
+/*// Better to use const global variables rather than #defines
 // as stated in 'Effective C++' item 2
 const GLuint GL_MULTISAMPLE_TWO_AA = 2;
 const GLuint GL_MULTISAMPLE_FOUR_AA = 4;
 const GLuint GL_MULTISAMPLE_EIGHT_AA = 8;
-const GLuint GL_MUTLISAMPLE_SIXTEEN_AA = 16;
+const GLuint GL_MUTLISAMPLE_SIXTEEN_AA = 16;*/
 
 typedef struct MultiSampleValue{
 	typedef enum Enum
@@ -66,6 +65,31 @@ typedef struct MultiSampleValue{
 	};
 }MSV;
 
+class CScreenMode
+{
+	DWORD bpp, width, height;
+
+public:
+	CScreenMode() { bpp = 0;  width = 0;  height = 0; }
+	CScreenMode(DWORD bitspp, DWORD sWidth, DWORD sHeight) { bpp = bitspp; width = sWidth, height = sHeight; }
+
+	CScreenMode& set(DWORD bitspp, DWORD sWidth, DWORD sHeight) 
+	{ bpp = bitspp; width = sWidth, height = sHeight; return *this; }
+
+	bool operator == (const CScreenMode& mode) { 
+		if (bpp == mode.bpp && width == mode.width && height == mode.height) 
+			return true; 
+		
+		return false; 
+	}
+	CScreenMode& operator = (const CScreenMode& mode) {
+		bpp = mode.bpp;
+		width = mode.width;
+		height = mode.height;
+		return *this;
+	}
+};
+
 // Defines what version of OpenGL Context we will be requesting. These are default values 
 // that are used when no version is specified.
 const GLuint GL_MAJOR = 3;
@@ -73,9 +97,9 @@ const GLuint GL_MINOR = 1;
 
 //#define DEBUG
 
-
 typedef class CGLWindowsCreation
 {
+private:
 	HGLRC		hRC;				// Permanent Rendering Context
 	HGLRC		ehRC;				// extended Rendering Context
 	HDC			hDC;				// Private GDI Device Context
@@ -86,9 +110,7 @@ typedef class CGLWindowsCreation
 	WNDCLASS	wc_;				// Windows class structure
 	DWORD		dwExStyle_;			// Windows Extended style
 	DWORD		dwStyle_;			// Window Style
-	GLuint		glMajorVersion;		// The major version number of the OpenGL Context we want
-	GLuint		glMinorVersion;		// The minor version number of the OpenGL Context we want
-public:
+//public:
 	RECT		WindowRect_;		// RECT that holds the windows width and height
 	int			windowXPos_;		// The x-position of the window on the desktop if running in windowed mode
 	int			windowYPos_;		// The y-position of the window on the desktop if running in windowed mode
@@ -108,6 +130,9 @@ public:
 									// when ShowWindow is called
 	GLuint		glMajor;			// Stores the major version number of OpenGL we need
 	GLuint		glMinor;			// Stores the minor version number of OpenGL we need
+
+	// A vector list that holds graphics card display modes
+	std::vector<CScreenMode> displayModes;
 
 
 
@@ -133,7 +158,7 @@ public:
 	void SetupWindows(int winWidth, int winHeight);
 
 	// Initialises the multisampling variables for all the constructors
-	inline void InitialiseMultisampling() {multisample_ = false; multisampleSupported_ = false; antiAliasLevel_ = GL_MULTISAMPLE_FOUR_AA;}
+	inline void InitialiseMultisampling() {multisample_ = false; multisampleSupported_ = false; antiAliasLevel_ = MultiSampleValue::GL_MULTISAMPLE_FOUR;}
 	
 	// Initialises the version number we need for all the constructors
 	inline void InitialiseVersion() { glMajor = GL_MAJOR; glMinor = GL_MINOR; }
@@ -164,6 +189,8 @@ private:
 	// Function to initialise Multisampling
 	bool InitMultisample(const PIXELFORMATDESCRIPTOR &pfd);
 	bool IsWGLExtensionSupported(const char *extension);
+
+	void findDisplayModes();
 
 
 }CGLWindows;

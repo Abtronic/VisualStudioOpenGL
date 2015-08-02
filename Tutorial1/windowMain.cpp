@@ -23,7 +23,8 @@
 #define PROJECTION		// If PROJECTION is defined then we have perspective projection else orthographic
 #define DEBUG			// If DEBUG is defined a debug console window will also be created.
 // Global Variables
-CGLWindows	OpenGLWindow;// (600, 400, 100, 100);		// Initialising a CGLWindows class
+CGLWindows	OpenGLWindow;// (600, 400, 100, 100);		// Initialising a CGLWindows class - Note don't try to write to a console window
+														// when there is no console window any further output will be directed to someplace else
 //CBitmap *bitmap;
 GLuint texture;
 //bool matrixFlag = 0;
