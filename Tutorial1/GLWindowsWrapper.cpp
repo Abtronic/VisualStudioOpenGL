@@ -290,7 +290,7 @@ void CGLWindowsCreation::findDisplayModes()
 		if (!(current == previous))
 		{ 
 			displayModes.push_back(current);
-
+			previous = current;
 		}
 	}
 }
