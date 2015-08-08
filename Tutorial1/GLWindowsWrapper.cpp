@@ -2,6 +2,18 @@
 
 //int z = 0;
 
+const std::pair<const int, const int> CGLWindowsCreation::screenResolutions[] =
+{
+	{ 320, 200 }, { 320, 240 }, { 352, 288 }, { 384, 288 }, { 480, 320 }, { 640, 480 },
+	{ 720, 480 }, { 720, 576 }, { 768, 576 }, { 800, 480 }, { 800, 600 }, { 854, 480 }, 
+	{ 1024, 576 }, { 1024, 768 }, { 1152, 768 }, { 1152, 864 }, { 1280, 720 }, { 1280, 768 }, 
+	{ 1280, 800 }, { 1280, 854 }, { 1280, 960 }, { 1280, 1024 }, { 1360, 768 }, { 1366, 768 }, 
+	{ 1400, 1050 }, { 1440, 900 }, { 1440, 960 }, { 1440, 1080 }, { 1600, 900 }, { 1600, 1024 }, 
+	{ 1600, 1200 }, { 1680, 1050 }, { 1920, 1080 }, { 1920, 1200 }, { 2048, 1080 }, { 2048, 1536 }, 
+	{ 2560, 1080 }, { 2560, 1440 }, { 2560, 1600 }, { 2560, 2048 }, { 3840, 2160 }, { 4096, 2160 }
+};
+
+
 int CGLWindowsCreation::WindowsMessages(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch(uMsg)			// Check for Windows messages
@@ -20,6 +32,7 @@ int CGLWindowsCreation::WindowsMessages(UINT uMsg, WPARAM wParam, LPARAM lParam)
 			{
 				if (fullscreen_)
 				{
+
 					ShowWindow(hWnd, SW_MINIMIZE);
 					active = false;
 				}
@@ -229,7 +242,9 @@ CGLWindowsCreation::CGLWindowsCreation(void)
 	}
 
 
-	WindowedResolution(winWidth, winHeight);
+	//WindowedResolution(winWidth, winHeight);
+	winWidth = width - (width / 6); 
+	winHeight = height - (height / 6);
 	findDisplayModes();
 	SetupWindows(winWidth, winHeight);
 }
@@ -240,23 +255,25 @@ CGLWindowsCreation::CGLWindowsCreation(int winWidth, int winHeight, int xPos, in
 {
 	InitialiseMultisampling();
 	InitialiseVersion();
+	findDisplayModes();
 	SetupWindows(winWidth, winHeight);
 
 	windowXPos_ = xPos;
 	windowYPos_ = yPos;
 }
 
-// Constructor where you define windowed dimensions, position and full screen bitdepth
+/*// Constructor where you define windowed dimensions, position and full screen bitdepth
 CGLWindowsCreation::CGLWindowsCreation(int winWidth, int winHeight, int xPos, int yPos, int bits)
 {
 	InitialiseMultisampling();
 	InitialiseVersion();
+	findDisplayModes();
 	SetupWindows(winWidth, winHeight);
 
 	windowXPos_ = xPos;
 	windowYPos_ = yPos;
 	screenBits_ = bits;
-}
+}*/
 
 /*bool CGLWindowsCreation::SetGLVersion(GLuint major, GLuint minor)
 {
@@ -284,6 +301,21 @@ void CGLWindowsCreation::findDisplayModes()
 	DEVMODE dm;
 	CScreenMode previous;
 
+/*	// test code to see the displays attached to this computer
+	DISPLAY_DEVICE dd;
+	dd.cb = sizeof(dd);
+	std::string name;
+	
+	for (int iDevNum = 0; EnumDisplayDevices(NULL, iDevNum, &dd, EDD_GET_DEVICE_INTERFACE_NAME) != 0; iDevNum++)
+	{
+		std::string s = dd.DeviceName;
+		MessageBox(NULL, s.c_str(), TEXT("Display Device Information"), 
+			MB_OK | MB_ICONINFORMATION);
+		if (iDevNum == 3)
+			name = dd.DeviceName;
+	}*/
+
+
 	for (int iModeNum = 0; EnumDisplaySettings(NULL, iModeNum, &dm) != 0; iModeNum++)
 	{
 		CScreenMode current(dm.dmBitsPerPel, dm.dmPelsWidth, dm.dmPelsHeight);
@@ -293,8 +325,39 @@ void CGLWindowsCreation::findDisplayModes()
 			previous = current;
 		}
 	}
+
 }
 
+// function to set the bpp and resolution of the fullscreen mode
+bool CGLWindowsCreation::SetFullScreenMode(EFullScreenBPP::Enum bpp, EFullScreenDispModes::Enum res)
+{
+	int width = screenResolutions[res].first;
+	int height = screenResolutions[res].second;
+	// psuedocode - use an iterator to cycle through the display modes checking to see if 
+	// one of them matches all three variables, i.e. bpp width and height. If so set the fullscreen
+	// bpp and resolution to the user requested.
+	for (std::vector<CScreenMode>::const_iterator disp_iter = displayModes.begin();
+		disp_iter != displayModes.end(); disp_iter++)
+	{
+		if (bpp == disp_iter->bpp && width == disp_iter->width && height == disp_iter->height)
+		{
+			fullScreenBits_ = bpp;
+			fullScreenWidth_ = width;
+			fullScreenHeight_ = height;
+			return true;
+		}
+	}
+	std::cout << "Display Mode - " << bpp << "bpp at " << width << "x" << height <<
+		"is not available so Windows display mode will be used" << std::endl;
+	return false;
+}
+
+// Check to see if all version requested is a valid OpenGl version
+// by checking to see if the extension is defined in glew.h
+// therefore try to keep up to date with new versions of glew.h
+// Note that the version may not be available because either your 
+// graphics card doesnt support it or the drivers don't implement it
+// So keep up to date with your drivers too!
 bool CGLWindowsCreation::SetGLVersion(GLuint major, GLuint minor)
 {
 	bool valid = false;
@@ -390,6 +453,11 @@ void CGLWindowsCreation::SetupWindows(int winWidth, int winHeight)
 
 	screenBits_ = GetDeviceCaps(hDcDesk, BITSPIXEL);	// Gets the bpp of the desktop using the desktop DC	
 
+	// Set the default display mode of the fullscreen mode to the display mode of the desktop
+	fullScreenBits_ = (EFullScreenBPP::Enum) screenBits_; 
+	fullScreenWidth_ = screenWidth_;
+	fullScreenHeight_ = screenHeight_;
+
 	ReleaseDC(NULL, hDcDesk);						// Releases the DC
 
 	WindowRect_.left = (long) 0;
@@ -414,7 +482,7 @@ void CGLWindowsCreation::SetupWindows(int winWidth, int winHeight)
 // fullscreen is not selected. 
 void CGLWindowsCreation::WindowedResolution(int &winWidth, int &winHeight)
 {
-	bool match = false;
+/*	bool match = false;
 	DEVMODE dm = {0};
 	dm.dmSize = sizeof(dm);
 
@@ -452,10 +520,10 @@ void CGLWindowsCreation::WindowedResolution(int &winWidth, int &winHeight)
 			prevBits = dm.dmBitsPerPel; prevWidth = dm.dmPelsWidth; prevHeight = dm.dmPelsHeight;
 		}
 	}
-	//MessageBoxPrintf(TEXT("Screen Resolution"), TEXT("%dx%d, color depth = %d"), width, height, bits);
+	//MessageBoxPrintf(TEXT("Screen Resolution"), TEXT("%dx%d, color depth = %d"), width, height, bits);//*/
 
 	// set our window width and height
-	winWidth = width; winHeight = height;
+	//winWidth = screenWidth_-(width/8); winHeight = height-(height/8);
 	
 }
 
@@ -482,11 +550,12 @@ bool CGLWindowsCreation::GetTaskBarRect(void)
 
 
 // if multisampling is specified by the user then 
-bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag, MultiSampleValue::Enum multisampling)
+bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag, EMultiSampleValue::Enum multisampling)
 {
 	multisample_ = true;
+	antiAliasLevel_ = multisampling;
 
-	if (multisampling > 16)
+/*	if (multisampling > 16)
 	{
 		MessageBox(NULL, TEXT("Anti-Aliasing is greater than 16"),
 			TEXT("ERROR"), MB_OK | MB_ICONEXCLAMATION);
@@ -505,13 +574,25 @@ bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag, Multi
 	indicates that 0 is a power of 2. He suggests to use:
 	(!(x & (x - 1)) && x)
 	to correct that problem.*/
-	if (multisampling && !(multisampling & (multisampling - 1)) )
+/*	if (multisampling && !(multisampling & (multisampling - 1)) )
 		antiAliasLevel_ = multisampling;
 	else
 	{
 		MessageBox(NULL, TEXT("Anti-Aliasing Level is not a power of 2"),
 			TEXT("ERROR"), MB_OK | MB_ICONEXCLAMATION);
 		return false;
+	}
+
+	for (int i = 0; i <= EFullScreenDispModes::RES_4K; i++)
+	{
+		std::cout << screenResolutions[i].first << "x" << screenResolutions[i].second << std::endl;
+	}*/
+
+	for (std::vector<CScreenMode>::const_iterator disp_iter = displayModes.begin();
+		disp_iter != displayModes.end(); disp_iter++)
+	{
+		std::cout << disp_iter->width << "x" << disp_iter->height << " @ "
+			<< disp_iter->bpp << "bpp" << std::endl;
 	}
 
 	return CreateGLWindow(title, fullscreenflag);
@@ -534,7 +615,7 @@ bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag)
 
 	if (fullscreen_)
 	{
-		winRect.right = screenWidth_; winRect.bottom = screenHeight_;
+		winRect.right = fullScreenWidth_; winRect.bottom = fullScreenHeight_;
 		winRect.top = winRect.left = 0;
 		xpos = ypos = 0;
 	}
@@ -567,31 +648,35 @@ bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag)
 
 	if (fullscreen_)					// Are we in fullscreen mode?
 	{
-		DEVMODE dmScreenSettings;		// Device Mode
-		memset(&dmScreenSettings, 0, sizeof(dmScreenSettings));	// Make sure memory is cleared
-		dmScreenSettings.dmSize = sizeof(dmScreenSettings);	// Size of the Devmode structure
-		dmScreenSettings.dmPelsWidth = screenWidth_;			// Selected Screen Width
-		dmScreenSettings.dmPelsHeight = screenHeight_;			// Selected Screen Height
-		dmScreenSettings.dmBitsPerPel = screenBits_;			// Selected Bits per Pixel
-		dmScreenSettings.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
-
-		//MessageBoxPrintf(TEXT("Resolution Info"), TEXT("w:%d h:%d b:%d"), winRect.right - winRect.left, 
-		//	winRect.bottom - winRect.top, screenBits_);
-
-		// Try to set the Selected Mode and get results. NOTE: CDS_FULLSCREEN gets rid of the Start Bar
-		if (ChangeDisplaySettings(&dmScreenSettings, CDS_FULLSCREEN) != DISP_CHANGE_SUCCESSFUL)
+		if (fullScreenBits_ != screenBits_ || fullScreenWidth_ != screenWidth_ || fullScreenHeight_ != screenHeight_)
 		{
-			if (MessageBox(NULL, TEXT("The Requested Fullscreen Mode is not Supported by\nyour Video Card. Use Windowed Mode Instead?"),
-				TEXT("OpenGL Wrapper"), MB_YESNO | MB_ICONQUESTION) == IDYES)
+			DEVMODE dmScreenSettings;		// Device Mode
+			memset(&dmScreenSettings, 0, sizeof(dmScreenSettings));	// Make sure memory is cleared
+			dmScreenSettings.dmSize = sizeof(dmScreenSettings);	// Size of the Devmode structure
+			dmScreenSettings.dmPelsWidth = fullScreenWidth_;			// Selected Screen Width
+			dmScreenSettings.dmPelsHeight = fullScreenHeight_;			// Selected Screen Height
+			dmScreenSettings.dmBitsPerPel = fullScreenBits_;			// Selected Bits per Pixel
+			dmScreenSettings.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
+
+			//MessageBoxPrintf(TEXT("Resolution Info"), TEXT("w:%d h:%d b:%d"), winRect.right - winRect.left, 
+			//	winRect.bottom - winRect.top, screenBits_);
+
+			// Try to set the Selected Mode and get results. NOTE: CDS_FULLSCREEN gets rid of the Start Bar
+			if (ChangeDisplaySettings(&dmScreenSettings, CDS_FULLSCREEN) != DISP_CHANGE_SUCCESSFUL)
 			{
-				fullscreen_ = false;			// Switch to Windowed Mode
+				if (MessageBox(NULL, TEXT("The Requested Fullscreen Mode is not Supported by\nyour Video Card. Use Windowed Mode Instead?"),
+					TEXT("OpenGL Wrapper"), MB_YESNO | MB_ICONQUESTION) == IDYES)
+				{
+					fullscreen_ = false;			// Switch to Windowed Mode
+				}
+				else
+				{
+					// Pop up a MessageBox letting the user know the Program is Closing
+					MessageBox(NULL, TEXT("Program will now Close."), TEXT("ERROR"), MB_OK | MB_ICONSTOP);
+					return false;			// exit the program and return false
+				}
 			}
-			else
-			{
-				// Pop up a MessageBox letting the user know the Program is Closing
-				MessageBox(NULL, TEXT("Program will now Close."), TEXT("ERROR"), MB_OK | MB_ICONSTOP);
-				return false;			// exit the program and return false
-			}
+
 		}
 	} 
 
@@ -645,7 +730,7 @@ bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag)
 		PFD_SUPPORT_OPENGL |				// Format must support OpenGL
 		PFD_DOUBLEBUFFER,					// Must support Double Buffering
 		PFD_TYPE_RGBA,						// Request an RGBA format
-		screenBits_,						// Colour Bit depth
+		fullScreenBits_,						// Colour Bit depth
 		0, 0, 0, 0, 0, 0, 0, 0,				// Colour and colour shift bits ignored
 		0, 0, 0, 0, 0,						// Accumulation bits ignored
 		24,									// No. of bits for Z-Buffer (depth buffer)
@@ -700,7 +785,7 @@ bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag)
 //					WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB,
 					WGL_DOUBLE_BUFFER_ARB, GL_TRUE,
 					WGL_PIXEL_TYPE_ARB, WGL_TYPE_RGBA_ARB,
-					WGL_COLOR_BITS_ARB, screenBits_,
+					WGL_COLOR_BITS_ARB, fullScreenBits_,
 //					WGL_ALPHA_BITS_ARB, 8,
 					WGL_DEPTH_BITS_ARB, 24,
 					WGL_STENCIL_BITS_ARB, 8,
@@ -729,7 +814,7 @@ bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag)
 					WGL_SUPPORT_OPENGL_ARB, GL_TRUE,
 					WGL_DOUBLE_BUFFER_ARB, GL_TRUE,
 					WGL_PIXEL_TYPE_ARB, WGL_TYPE_RGBA_ARB,
-					WGL_COLOR_BITS_ARB, screenBits_,
+					WGL_COLOR_BITS_ARB, fullScreenBits_,
 					WGL_DEPTH_BITS_ARB, 24,
 					WGL_STENCIL_BITS_ARB, 8,
 					0
@@ -804,10 +889,28 @@ bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag)
 			UINT numFormats;
 			if (!(hRC = wglCreateContextAttribsARB(hDC, 0, contextAttribs)))
 			{
-				KillGLWindow();						// Kill the Window
-				MessageBox(NULL, TEXT("Can't create a GL Rendering Context."),
-					TEXT("ERROR"), MB_OK | MB_ICONEXCLAMATION);	// Tell the user
-				return false;						// Exit Code
+				std::string message = "Graphics Card (or drivers) do not support a " + std::to_string(glMajor) + "." 
+					+ std::to_string(glMinor) + " GL Rendering Context. Use default GL Context instead?";
+				//KillGLWindow();						// Kill the Window
+				if (MessageBox(NULL, TEXT(message.c_str()), TEXT("ERROR"), MB_YESNO | MB_ICONQUESTION) == IDYES)	// Tell the user and give choice
+				{
+					glMajor = GL_MAJOR; glMinor = GL_MINOR;
+					contextAttribs[1] = glMajor; contextAttribs[3] = glMinor;
+					if (!(hRC = wglCreateContextAttribsARB(hDC, 0, contextAttribs)))
+					{
+						KillGLWindow();						// Kill the Window
+						MessageBox(NULL, TEXT("Can't create the default GL Rendering Context."),
+							TEXT("ERROR"), MB_OK | MB_ICONEXCLAMATION);	// Tell the user
+						return false;						// Exit Code
+					}
+				}
+				else
+				{
+					KillGLWindow();
+					return false;
+				}
+
+				//return false;						// Exit Code
 			}
 		}
 		else
@@ -852,7 +955,7 @@ bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag)
 
 	if (fullscreen_)
 	{
-		ReSizeGLScene(screenWidth_, screenHeight_);	// Setup the correct viewport
+		ReSizeGLScene(fullScreenWidth_, fullScreenHeight_);	// Setup the correct viewport
 	}
 	else
 	{
@@ -917,7 +1020,7 @@ bool CGLWindowsCreation::InitMultisample(const PIXELFORMATDESCRIPTOR& pfd)
 		WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
 		WGL_SUPPORT_OPENGL_ARB, GL_TRUE,
 		WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB,
-		WGL_COLOR_BITS_ARB, screenBits_,	// Note that the colour bit depth is given a variable
+		WGL_COLOR_BITS_ARB, fullScreenBits_,	// Note that the colour bit depth is given a variable
 		WGL_ALPHA_BITS_ARB, 8,
 		WGL_DEPTH_BITS_ARB, 16,
 		WGL_STENCIL_BITS_ARB, 0,

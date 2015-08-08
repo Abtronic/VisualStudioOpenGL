@@ -23,7 +23,7 @@
 #define PROJECTION		// If PROJECTION is defined then we have perspective projection else orthographic
 #define DEBUG			// If DEBUG is defined a debug console window will also be created.
 // Global Variables
-CGLWindows	OpenGLWindow;// (600, 400, 100, 100);		// Initialising a CGLWindows class - Note don't try to write to a console window
+CGLWindows	OpenGLWindow(600, 400, 600, 100);		// Initialising a CGLWindows class - Note don't try to write to a console window
 														// when there is no console window any further output will be directed to someplace else
 //CBitmap *bitmap;
 GLuint texture;
@@ -116,7 +116,7 @@ int InitGL(GLvoid)									// Initialisation of a new OpenGL Window
 	glEnable(GL_TEXTURE_2D);			// Enables 2D texturing
 	glShadeModel(GL_SMOOTH);			// Enables smooth shading (gourad shading)
 
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);			// Black Background
+	glClearColor(0.0f, 0.0f, 0.2f, 0.0f);			// Black Background
 
 	glClearDepth(1.0f);					// The range of the depth buffer is clamped from 0 to 1
 	glEnable(GL_DEPTH_TEST);			// Enables Depth-Testing
@@ -284,20 +284,27 @@ int WINAPI WinMain( HINSTANCE	hInstance,
 		fullscreen = true;
 	}
 
-	OpenGLWindow.SetGLVersion(4, 2);
+	OpenGLWindow.SetGLVersion(4, 3);
+
+	OpenGLWindow.SetFullScreenMode(EFullScreenBPP::GL_BPP_THIRTYTWO, EFullScreenDispModes::SDTV_480i);
+
+	//OpenGLWindow.SetFullscreenBPP(16);
 
 	// Note that the window is created with 'fullscreen' specifications and 
 	// with a request for an anti-aliased (8 passes) graphical window
 	if (!OpenGLWindow.CreateGLWindow(TEXT("C++ Extended OpenGL Window Class (using GLEW)"), fullscreen, 
 		MSV::GL_MULTISAMPLE_EIGHT))	// If we recieve an error code
+//	if (!OpenGLWindow.CreateGLWindow(TEXT("C++ Extended OpenGL Window Class (using GLEW)"), fullscreen))	// If we recieve an error code
 	{
 		return 0;			// Quit 
 	}
 
 	int QuitMessage = OpenGLWindow.MessageLoop();
 
-//	delete bitmap;
+//	free our debug console if it is present;
+#ifdef DEBUG
 	FreeConsole();
+#endif
 
 	return (QuitMessage);
 }
