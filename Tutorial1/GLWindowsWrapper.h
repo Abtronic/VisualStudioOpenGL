@@ -179,6 +179,7 @@ private:
 	int			fullScreenWidth_;	// The requested width of the full screen resolution
 	int			fullScreenHeight_;	// The requested height of the full screen resolution
 	int			fullScreenBits_;	// The requested bits per pixel of the full screen resolution
+	bool		sameAsDesktopDisp_;	// true if the fullscreen display is the same as the desktop display
 
 	bool		fullscreen_;		// Stores true or false for fullscreen window or not
 	bool		multisample_;		// Stores true or false for multisampling required or not
@@ -192,6 +193,9 @@ private:
 									// when ShowWindow is called
 	GLuint		glMajor;			// Stores the major version number of OpenGL we need
 	GLuint		glMinor;			// Stores the minor version number of OpenGL we need
+
+	DEVMODE		windowsDispSettings;// Stores the display mode that Windows is using before our OpenGL window is created
+	DEVMODE		GLDispSettings;		// Stores the display mode that our OpenGL window is using
 
 	// A vector list that holds graphics card display modes
 	std::vector<CScreenMode> displayModes;

@@ -286,16 +286,17 @@ int WINAPI WinMain( HINSTANCE	hInstance,
 
 	OpenGLWindow.SetGLVersion(4, 3);
 
-	OpenGLWindow.SetFullScreenMode(EFullScreenBPP::GL_BPP_THIRTYTWO, EFullScreenDispModes::SDTV_480i);
+	OpenGLWindow.SetFullScreenMode(EFullScreenBPP::GL_BPP_THIRTYTWO, EFullScreenDispModes::SVGA);
 
 	//OpenGLWindow.SetFullscreenBPP(16);
 
 	// Note that the window is created with 'fullscreen' specifications and 
 	// with a request for an anti-aliased (8 passes) graphical window
-	if (!OpenGLWindow.CreateGLWindow(TEXT("C++ Extended OpenGL Window Class (using GLEW)"), fullscreen, 
-		MSV::GL_MULTISAMPLE_EIGHT))	// If we recieve an error code
+	if (!OpenGLWindow.CreateGLWindow(TEXT("C++ Extended OpenGL Window Class (using GLEW)"), fullscreen, MSV::GL_MULTISAMPLE_EIGHT))	// If we recieve an error code
 //	if (!OpenGLWindow.CreateGLWindow(TEXT("C++ Extended OpenGL Window Class (using GLEW)"), fullscreen))	// If we recieve an error code
 	{
+		MessageBox(NULL, TEXT("Failed to Create GL Window"),
+			TEXT("ERROR"), MB_OK | MB_ICONEXCLAMATION);
 		return 0;			// Quit 
 	}
 

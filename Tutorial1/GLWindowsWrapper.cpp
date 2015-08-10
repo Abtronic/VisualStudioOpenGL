@@ -16,38 +16,82 @@ const std::pair<const int, const int> CGLWindowsCreation::screenResolutions[] =
 
 int CGLWindowsCreation::WindowsMessages(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+	static bool altEnter = false;
 	switch(uMsg)			// Check for Windows messages
 	{
+		
 	case WM_ACTIVATE:		// Watch for the Window Activate message
 		{
-			if (!HIWORD(wParam))			// Check minimisation state
+			std::cout << "WM_ACTIVATE message" << std::endl;
+			/*if (!HIWORD(wParam))			// Check minimisation state
 			{
 				active = true;				// Program is active
 			}
 			else
 			{
 				active = false;				// Program is no longer active
-			}
-			if (!LOWORD(wParam))
+			}*/
+			if (LOWORD(wParam) == WA_INACTIVE)
 			{
-				if (fullscreen_)
+				if (!altEnter)
 				{
+					//altEnter = false;
+					//std::cout << "WParam low word " << LOWORD(wParam) << std::endl;
+					if (fullscreen_)
+					{
 
-					ShowWindow(hWnd, SW_MINIMIZE);
-					active = false;
+						ShowWindow(hWnd, SW_MINIMIZE);
+						//active = false;
+						if (fullScreenBits_ != screenBits_ || fullScreenWidth_ != screenWidth_ || fullScreenHeight_ != screenHeight_)
+						{
+							//std::cout << "change" << std::endl;
+							//KillGLWindow();
+							ChangeDisplaySettings(NULL, 0);
+						}
+					}
 				}
+				else
+					altEnter = false;
+			}
+			else
+			{
+				if (!altEnter)
+				{
+					//altEnter = false;
+					//std::cout << LOWORD(wParam) << std::endl;
+					//std::cout << "WParam low word " << LOWORD(wParam) << std::endl;
+					if (fullscreen_)
+					{
+
+						//RECT winRect;
+						//GetWindowRect(hWnd, &winRect);
+						//std::cout << winRect.left << "," << winRect.top << 
+						//	" : " << windowXPos_ << "," << windowYPos_ << std::endl;
+						ChangeDisplaySettings(&GLDispSettings, CDS_FULLSCREEN);
+					}
+				}
+				else
+					altEnter = false;
 			}
 
 			return 0;						// Return to the message loop
+		}
+	case WM_SETFOCUS:
+		{
+			active = true;
+			//std::cout << "ACTIVE = " << active << std::endl;
+			return 0;
 		}
 	case WM_KILLFOCUS:
 		{
 			//ShowWindow(hWnd, SW_SHOWMINNOACTIVE);
 			active = false;
+			//std::cout << "ACTIVE = " << active << std::endl;
 			return 0;
 		}
 	case WM_SYSCOMMAND:						// Intercept System Commands
 		{
+			//std::cout << wParam << std::endl;
 			switch(wParam)					// Check which system call it is
 			{
 			case SC_SCREENSAVE:				// Is the screensaver trying to start?
@@ -62,30 +106,33 @@ int CGLWindowsCreation::WindowsMessages(UINT uMsg, WPARAM wParam, LPARAM lParam)
 			PostQuitMessage(0);				// Send a quit message
 			return 0;						// Return to message loop
 		}
-	case WM_KEYDOWN:						// If a key is being held down
+	case WM_SYSKEYDOWN:						//  The F10 or the left ALT key has been pressed
 		{
-			std::cout << wParam << std::endl;
-			keys[wParam] = true;			// Mark the corresponding keys array entry as true
-			return 0;						// Jump back to message loop
-		}
-		
-	case WM_SYSKEYDOWN:
-		{
-			if (lParam & (1 << 29))
+			if (lParam & (1 << 29))			// if it's the ALT key
 			{
-				if (wParam == VK_RETURN)
+				//std::cout << "ALT pressed" << std::endl;
+				if (wParam == VK_RETURN)	// if the key combination is ALT+ENTER
 				{
+					// toggle the fullscreen mode and recreate the window
 					KillGLWindow();
 					fullscreen_ = !fullscreen_;
+					altEnter = true;
 					if (!CreateGLWindow(TEXT("C++ OpenGL Window Class"), fullscreen_))
 					{
 						return 0;			// if the Window is not created then quit the program
 					}
 				}
-				
 			}
 			return 0;
 		}
+	case WM_KEYDOWN:						// If a key is being held down
+	{
+		//std::cout << wParam << std::endl;
+		//if (wParam == VK_F6)
+		//write = !write;
+		keys[wParam] = true;			// Mark the corresponding keys array entry as true
+		return 0;						// Jump back to message loop
+	}
 	case WM_KEYUP:							// If a key is released
 		{
 			keys[wParam] = false;			// Mark the corresponding keys array entry as false
@@ -100,21 +147,37 @@ int CGLWindowsCreation::WindowsMessages(UINT uMsg, WPARAM wParam, LPARAM lParam)
 				WindowRect_.right = LOWORD(lParam);
 				WindowRect_.bottom = HIWORD(lParam);
 			}
-			return 0;										// Jump back to the message loop
+			return 0;						// Jump back to the message loop
 		}
-	case WM_MOVE:
+	case WM_MOVE:							// The window has moved to a new position
 		{
-			if (!fullscreen_)
+			if (!fullscreen_)				// if we are in windowed mode
 			{
-				RECT rect;
-				GetWindowRect(hWnd, &rect);
-				windowXPos_ = rect.left;
-				windowYPos_ = rect.top;
+				// save the new window position, so we can position our window back here when, 
+				// for example, alt+enter to switch from windowed to fullscreen mode
+				windowXPos_ = LOWORD(lParam);
+				windowYPos_ = HIWORD(lParam);
 			}
+			//RECT winRect;
+			//GetWindowRect(hWnd, &winRect);
+			//std::cout << "WM_MOVE " << winRect.left << "," << winRect.top <<
+			//	" : " << windowXPos_ << "," << windowYPos_ << std::endl;
 			return 0;
 		}
+	case WM_WINDOWPOSCHANGING:				// The windows size, position or z-order is about to be changed
+		{
+			//WINDOWPOS pos = *(WINDOWPOS *)lParam;
+			//std::cout << "WM_WINDOWPOSCHANGING" << pos.x << "," << pos.y <<
+			//	" : " << pos.cx << "," << pos.cy << std::endl;
+			if (fullscreen_)				// if our application is in fullscreen mode
+			{
+				// change where we will move the window, to (0, 0) 
+				// This stops the window from strangely moving when alt-tabbing back to the fullscreen
+				// window
+				((WINDOWPOS *)lParam)->y = 0; ((WINDOWPOS *)lParam)->x = 0;
+			}
+		}
 	}
-
 	return 1;
 }
 
@@ -315,6 +378,13 @@ void CGLWindowsCreation::findDisplayModes()
 			name = dd.DeviceName;
 	}*/
 
+	if (EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &dm) == DISP_CHANGE_SUCCESSFUL)
+	{
+		windowsDispSettings = dm;
+	}
+	//MessageBoxPrintf(TEXT("Current Settings"), TEXT("%dx%d @ %dbpp"), 
+		//dm.dmPelsWidth, dm.dmPelsHeight, dm.dmBitsPerPel);
+	
 
 	for (int iModeNum = 0; EnumDisplaySettings(NULL, iModeNum, &dm) != 0; iModeNum++)
 	{
@@ -658,6 +728,7 @@ bool CGLWindowsCreation::CreateGLWindow(TCHAR *title, bool fullscreenflag)
 			dmScreenSettings.dmBitsPerPel = fullScreenBits_;			// Selected Bits per Pixel
 			dmScreenSettings.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
 
+			GLDispSettings = dmScreenSettings;
 			//MessageBoxPrintf(TEXT("Resolution Info"), TEXT("w:%d h:%d b:%d"), winRect.right - winRect.left, 
 			//	winRect.bottom - winRect.top, screenBits_);
 
