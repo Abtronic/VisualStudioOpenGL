@@ -17,16 +17,14 @@
 
 
 #include "GLWindowsWrapper.h"
-//#include "BitmapLoader.h"
 
-//#define GLEW_STATIC
 #define PROJECTION		// If PROJECTION is defined then we have perspective projection else orthographic
 #define DEBUG			// If DEBUG is defined a debug console window will also be created.
 // Global Variables
 CGLWindows	OpenGLWindow(600, 400, 600, 100);		// Initialising a CGLWindows class - Note don't try to write to a console window
 														// when there is no console window any further output will be directed to someplace else
 //CBitmap *bitmap;
-GLuint texture;
+//GLuint texture;
 //bool matrixFlag = 0;
 //GLfloat modelView[16];
 GLuint VertexArray1D;
@@ -113,8 +111,8 @@ int InitGL(GLvoid)									// Initialisation of a new OpenGL Window
 
 	std::cout << "Using OpenGL Version: " << (char *)glGetString(GL_VERSION) << std::endl;
 
-	glEnable(GL_TEXTURE_2D);			// Enables 2D texturing
-	glShadeModel(GL_SMOOTH);			// Enables smooth shading (gourad shading)
+	//glEnable(GL_TEXTURE_2D);			// Enables 2D texturing
+	//glShadeModel(GL_SMOOTH);			// Enables smooth shading (gourad shading)
 
 	glClearColor(0.0f, 0.0f, 0.2f, 0.0f);			// Black Background
 
@@ -125,11 +123,11 @@ int InitGL(GLvoid)									// Initialisation of a new OpenGL Window
 										// respectively in the depth buffer, both in the region 0 to 1.
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);	// Really nice perspective calculation
 
-	glEnable(GL_CULL_FACE);				// Enables face culling
-	glCullFace(GL_BACK);				// Sets the back faces to be culled, i.e. triangles that are wound CW
+	//glEnable(GL_CULL_FACE);				// Enables face culling
+	//glCullFace(GL_BACK);				// Sets the back faces to be culled, i.e. triangles that are wound CW
 
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	glPixelStorei(GL_PACK_ALIGNMENT, 1);
+	//glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	//glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
 /*	if(!LoadGLTextures())
 	{
@@ -173,7 +171,7 @@ int DrawGLScene(GLvoid)					// Function that handles all of the OpenGL drawing
 		glTexCoord2f(1.0f, 1.0f); glVertex3f( 1.0f,  1.0f,  0.0f);	// Top Right
 		glTexCoord2f(0.0f, 1.0f); glVertex3f(-1.0f,  1.0f,  0.0f);	// Top Left
 	} glEnd(); // */
-	angle += 0.1f;
+	angle += 0.25f;
 	glRotatef(angle, 1.0f, 0.0f, 1.0f);
 
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
