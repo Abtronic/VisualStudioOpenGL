@@ -76,17 +76,14 @@ int CGLWindowsCreation::WindowsMessages(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 			return 0;						// Return to the message loop
 		}
-	case WM_SETFOCUS:
+	case WM_SETFOCUS:						// if the program gains focus
 		{
-			active = true;
-			//std::cout << "ACTIVE = " << active << std::endl;
+			active = true;					// set the program active state to true
 			return 0;
 		}
-	case WM_KILLFOCUS:
+	case WM_KILLFOCUS:						// if the program loses focus
 		{
-			//ShowWindow(hWnd, SW_SHOWMINNOACTIVE);
-			active = false;
-			//std::cout << "ACTIVE = " << active << std::endl;
+			active = false;					// set the program active state to false
 			return 0;
 		}
 	case WM_SYSCOMMAND:						// Intercept System Commands
@@ -110,13 +107,13 @@ int CGLWindowsCreation::WindowsMessages(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		{
 			if (lParam & (1 << 29))			// if it's the ALT key
 			{
-				//std::cout << "ALT pressed" << std::endl;
 				if (wParam == VK_RETURN)	// if the key combination is ALT+ENTER
 				{
 					// toggle the fullscreen mode and recreate the window
 					KillGLWindow();
 					fullscreen_ = !fullscreen_;
-					altEnter = true;
+					altEnter = true;		// set the static altEnter to true so when WM_ACTIVATE is sent 
+											// we know it's because of Alt+Enter was pressed
 					if (!CreateGLWindow(TEXT("C++ OpenGL Window Class"), fullscreen_))
 					{
 						return 0;			// if the Window is not created then quit the program
@@ -158,10 +155,7 @@ int CGLWindowsCreation::WindowsMessages(UINT uMsg, WPARAM wParam, LPARAM lParam)
 				windowXPos_ = LOWORD(lParam);
 				windowYPos_ = HIWORD(lParam);
 			}
-			//RECT winRect;
-			//GetWindowRect(hWnd, &winRect);
-			//std::cout << "WM_MOVE " << winRect.left << "," << winRect.top <<
-			//	" : " << windowXPos_ << "," << windowYPos_ << std::endl;
+
 			return 0;
 		}
 	case WM_WINDOWPOSCHANGING:				// The windows size, position or z-order is about to be changed
@@ -397,6 +391,14 @@ void CGLWindowsCreation::findDisplayModes()
 	}
 
 }
+
+
+// Function to get the displays modes in enum form in order to choose a valid display mode
+DispModeVector CGLWindowsCreation::getDisplayModes()
+{
+	return displayModes;
+}
+
 
 // function to set the bpp and resolution of the fullscreen mode
 bool CGLWindowsCreation::SetFullScreenMode(EFullScreenBPP::Enum bpp, EFullScreenDispModes::Enum res)

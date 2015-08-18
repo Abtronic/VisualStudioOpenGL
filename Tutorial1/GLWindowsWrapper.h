@@ -55,6 +55,7 @@ const GLuint GL_MULTISAMPLE_FOUR_AA = 4;
 const GLuint GL_MULTISAMPLE_EIGHT_AA = 8;
 const GLuint GL_MUTLISAMPLE_SIXTEEN_AA = 16;*/
 
+
 typedef struct EMultiSampleValue{
 	typedef enum Enum
 	{
@@ -122,7 +123,6 @@ struct EFullScreenDispModes{
 	};
 };
 
-
 class CScreenMode
 {
 public:
@@ -148,6 +148,8 @@ public:
 		return *this;
 	}
 };
+
+typedef std::vector<CScreenMode> DispModeVector;
 
 // Defines what version of OpenGL Context we will be requesting. These are default values 
 // that are used when no version is specified.
@@ -199,6 +201,7 @@ private:
 
 	// A vector list that holds graphics card display modes
 	std::vector<CScreenMode> displayModes;
+	//DispModeVector displayModes;
 
 	const static std::pair<const int, const int> screenResolutions[];// =
 /*	{
@@ -251,6 +254,8 @@ public:
 	// Overloaded Function to create a multisampled window; calls CreateGlWindow ultimately
 	bool CreateGLWindow(TCHAR *title, bool fullscreenflag, EMultiSampleValue::Enum multisampling);
 
+	// Function to get the displays modes in enum form in order to choose a valid display mode
+	DispModeVector getDisplayModes();
 
 	// Function to kill the window
 	void KillGLWindow(void);
@@ -263,7 +268,7 @@ public:
 
 private:
 
-	// Function to initialise Multisampling
+	// Functions to initialise Multisampling
 	bool InitMultisample(const PIXELFORMATDESCRIPTOR &pfd);
 	bool IsWGLExtensionSupported(const char *extension);
 

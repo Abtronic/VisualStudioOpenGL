@@ -284,6 +284,8 @@ int WINAPI WinMain( HINSTANCE	hInstance,
 
 	OpenGLWindow.SetGLVersion(4, 3);
 
+	DispModeVector modes = OpenGLWindow.getDisplayModes();
+
 	OpenGLWindow.SetFullScreenMode(EFullScreenBPP::GL_BPP_THIRTYTWO, EFullScreenDispModes::SVGA);
 
 	//OpenGLWindow.SetFullscreenBPP(16);
